@@ -18,3 +18,17 @@
 - Se documentaron fallos de reproducibilidad, fuga potencial en fronteras temporales y ausencia de vintages point-in-time.
 - Se endureció `.gitignore` para excluir secretos, entornos, cachés y directorios generados por la cadena one-file.
 - No se modificó v1.7-FROZEN ni se promovió ningún Challenger.
+
+## Methodology Foundation — rama de trabajo
+
+- Corregida la compatibilidad de módulos embebidos con `dataclass` en Python 3.10, sin editar archivos históricos.
+- Añadida purga posicional de labels forward en fronteras discovery/validation/future.
+- Añadidos placebo circular y control FDR Benjamini-Hochberg en discovery/validation de v1.19 activo.
+- Añadido `AvailabilityLedger`; fuentes sin vintage point-in-time bloquean promoción y fuerzan peso causal 0.
+- Añadidos fingerprints reproducibles de código, inputs y features por corrida.
+- Añadidos Sortino, hit rate, turnover y costo conservador del rebalanceo entre motores.
+- Añadido `verify.ps1` y tests de temporalidad, proveniencia, estadística, ejecución embebida y reproducibilidad.
+- Añadidos timeouts explícitos para Yahoo/FRED y salida fail-closed `CAUSAL_ENGINE_NO_EVIDENCE` cuando no existe OOS suficiente.
+- Validada la cadena reanudable hasta v1.19: FRED falló visiblemente, los proxies quedaron declarados y el peso causal permaneció en 0%.
+- Sincronizados `causal_state.json`, `causal_sources.json` y `run_manifest.json` con los blockers y conteos finales.
+- `src/history/` y v1.7-FROZEN permanecen intactos.

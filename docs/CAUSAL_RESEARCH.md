@@ -13,6 +13,16 @@ Una causa candidata debe satisfacer:
 6. **Future OOS:** mantiene señal en un periodo completamente futuro.
 7. **Incrementalidad:** mejora un baseline técnico; de lo contrario no obtiene capital.
 
+## Controles implementados en Methodology Foundation
+
+- Los últimos `h+1` registros de cada partición se purgan por posición en el calendario real de sesiones.
+- Discovery y validation registran número de hipótesis y q-values Benjamini-Hochberg.
+- Cada driver debe superar un placebo por desplazamiento circular además de los filtros de temporalidad y signo.
+- La historia revisada actual se identifica como no point-in-time y bloquea promoción.
+- Cada corrida causal guarda hashes de entrypoint, inputs y matrices de drivers.
+
+Los p-values de Spearman y FDR se consideran filtros de screening, no prueba causal definitiva. La siguiente capa debe incorporar inferencia robusta a dependencia serial mediante block bootstrap/permutaciones por bloques.
+
 ## Hipótesis actuales
 
 ### QQQ

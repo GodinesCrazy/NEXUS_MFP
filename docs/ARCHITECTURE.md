@@ -24,6 +24,20 @@ Busca causas candidatas con mecanismo explícito y secuencia temporal:
 
 Para cada año T utiliza T-5/T-4/T-3 para discovery, T-2/T-1 para validation y T para prueba futura.
 
+## Methodology Foundation
+
+La rama de saneamiento conserva el entrypoint único y extrae únicamente contratos críticos a `src/nexus_core/`:
+
+- `temporal.py`: purga posicional de labels según sesiones reales;
+- `provenance.py`: ledger de fuente, frecuencia, lag, vintage y fallback;
+- `statistics.py`: p-values, combinación de evidencia y Benjamini-Hochberg;
+- `reproducibility.py`: fingerprints deterministas de código, datos y features;
+- `embedded.py`: compatibilidad segura con la cadena histórica ejecutada mediante `exec`.
+
+Los archivos bajo `src/history/` permanecen inmutables. Las correcciones sólo se aplican a `src/nexus_mfp.py` y a su alias activo de compatibilidad.
+
+La promoción es fail-closed: si una fuente causal no es point-in-time, el laboratorio puede producir diagnósticos pero el peso del Causal Engine permanece en cero.
+
 ## Universo actual
 - QQQ: tecnología/growth EE.UU.
 - ECH: Chile.

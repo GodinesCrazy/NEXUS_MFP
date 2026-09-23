@@ -28,9 +28,17 @@ Para abrir el proyecto en VS Code:
 code C:\NEXUS_MFP
 ```
 
+Para verificar contratos metodológicos, sintaxis y dependencias sin ejecutar una investigación completa:
+
+```powershell
+.\verify.ps1
+```
+
 ## Estructura
 
 - `src/nexus_mfp.py`: versión actual de trabajo (v1.19 al migrar).
+- `src/nexus_core/`: contratos testeables de temporalidad, proveniencia, estadística y reproducibilidad.
+- `tests/`: pruebas que tienen prioridad sobre cualquier mejora de métricas.
 - `src/history/`: versiones históricas y motores previos.
 - `docs/`: explicación técnica, arquitectura, estado y reglas de investigación.
 - `legacy_docs/`: README históricos del proyecto MFP-3.
