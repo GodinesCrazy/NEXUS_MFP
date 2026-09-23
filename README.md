@@ -34,11 +34,20 @@ Para verificar contratos metodológicos, sintaxis y dependencias sin ejecutar un
 .\verify.ps1
 ```
 
+Para abrir la terminal gráfica local:
+
+```powershell
+.\dashboard.ps1
+```
+
+Luego visita `http://127.0.0.1:8765`. La terminal muestra cotizaciones dependientes de disponibilidad, señales de rebalanceo paper, métricas, gate causal y progreso observable de la cadena. No contiene ejecución de órdenes reales.
+
 ## Estructura
 
 - `src/nexus_mfp.py`: versión actual de trabajo (v1.19 al migrar).
-- `src/nexus_core/`: contratos testeables de temporalidad, proveniencia, estadística y reproducibilidad.
+- `src/nexus_core/`: contratos testeables de temporalidad, proveniencia, estadística, snapshots point-in-time, bootstrap y reproducibilidad.
 - `tests/`: pruebas que tienen prioridad sobre cualquier mejora de métricas.
+- `src/nexus_ui/`: API local, agregación de artefactos y terminal gráfica.
 - `src/history/`: versiones históricas y motores previos.
 - `docs/`: explicación técnica, arquitectura, estado y reglas de investigación.
 - `legacy_docs/`: README históricos del proyecto MFP-3.

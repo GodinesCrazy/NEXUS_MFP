@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>NEXUS · Research Terminal</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <div class="brand-mark" aria-hidden="true">N</div>
+      <div>
+        <p class="eyebrow">MARKET FORECASTING PLATFORM</p>
+        <h1>NEXUS <span>Research Terminal</span></h1>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="connection" data-testid="connection-status">
+        <span class="pulse"></span>
+        <span id="connectionLabel">CONECTANDO</span>
+      </div>
+      <div class="paper-badge">PAPER ONLY</div>
+      <button class="button ghost" id="refreshMarket" data-testid="refresh-market">Actualizar mercado</button>
+      <button class="button primary" id="runModel" data-testid="run-model">Ejecutar cadena</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="ticker-strip" id="tickerStrip" aria-label="Cotizaciones de mercado">
+      <div class="ticker-skeleton">Cargando mercado online…</div>
+    </section>
+
+    <section class="command-deck">
+      <div>
+        <p class="eyebrow cyan">CONTROL DE MISIÓN</p>
+        <h2>La investigación, observable de punta a punta.</h2>
+        <p class="lede">Sigue qué motor está trabajando, su objetivo actual, la evidencia disponible y por qué una señal puede —o no— recibir peso.</p>
+      </div>
+      <div class="asof-block">
+        <span>ARTEFACTOS</span>
+        <strong id="artifactTime">—</strong>
+        <small id="artifactRoot">Buscando última corrida…</small>
+      </div>
+    </section>
+
+    <section class="kpi-grid" aria-label="Resumen de cartera">
+      <article class="kpi-card accent">
+        <span class="kpi-label">Cartera paper</span>
+        <strong id="portfolioValue">—</strong>
+        <small id="portfolioReturn">Retorno desde inicio —</small>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Champion</span>
+        <strong id="championName">v1.7-FROZEN</strong>
+        <small>Modelo congelado · sólo paper</small>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Gate causal</span>
+        <strong id="causalGate">BLOQUEADO</strong>
+        <small id="causalWeight">Peso causal 0,0%</small>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Salud de fuentes</span>
+        <strong id="sourceHealth">—</strong>
+        <small id="sourceDetail">Comprobando proveniencia…</small>
+      </article>
+    </section>
+
+    <section class="workspace-grid">
+      <article class="panel signals-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">DECISIÓN PAPER</p>
+            <h3>Mapa de exposición</h3>
+          </div>
+          <span class="status-chip neutral" id="signalDate">SEÑAL —</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Activo</th><th>Acción</th><th>Actual</th><th>Objetivo</th><th>Modelo</th></tr>
+            </thead>
+            <tbody id="signalsTable">
+              <tr><td colspan="5" class="empty">Cargando señales verificadas…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="disclaimer" id="disclaimer">Señales de investigación. No son órdenes ni asesoría financiera.</p>
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">VENTANA COMÚN</p>
+            <h3>Capital modelo vs benchmark</h3>
+          </div>
+          <div class="legend"><span class="model-dot"></span>NEXUS <span class="benchmark-dot"></span>Benchmark</div>
+        </div>
+        <canvas id="equityChart" height="240" aria-label="Curva de capital comparativa"></canvas>
+        <div class="metrics-row" id="metricsRow"></div>
+      </article>
+    </section>
+
+    <section class="panel execution-panel">
+      <div class="panel-heading execution-heading">
+        <div>
+          <p class="eyebrow cyan">EJECUCIÓN OBSERVABLE</p>
+          <h3 id="runPhase">En espera</h3>
+          <p id="runObjective">Selecciona una ejecución para comenzar.</p>
+        </div>
+        <div class="run-controls">
+          <label for="runMode">Alcance</label>
+          <select id="runMode" data-testid="run-mode">
+            <option value="standard">Cadena por cadencia</option>
+            <option value="causal">Forzar laboratorio causal</option>
+          </select>
+          <span class="run-state idle" id="runState">IDLE</span>
+        </div>
+      </div>
+      <div class="progress-meta">
+        <span id="runMeta">Sin proceso activo</span>
+        <strong id="runPercent">0%</strong>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressTrack">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="phase-rail" id="phaseRail">
+        <span>Bootstrap</span><span>Champion</span><span>Eventos</span><span>Discovery</span><span>Fusion</span><span>Causal</span><span>Cierre</span>
+      </div>
+      <div class="terminal-shell">
+        <div class="terminal-bar"><span></span><span></span><span></span><b>nexus://research-chain</b></div>
+        <pre id="runLogs" data-testid="run-logs"><code>$ NEXUS listo. Ninguna operación real está habilitada.</code></pre>
+      </div>
+    </section>
+
+    <section class="workspace-grid lower-grid">
+      <article class="panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">GOBERNANZA</p><h3>Por qué no se promueve</h3></div>
+          <span class="status-chip danger" id="promotionStatus">PESO 0%</span>
+        </div>
+        <div class="blocker-list" id="blockerList"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">TRAZABILIDAD</p><h3>Estado del sistema</h3></div>
+        </div>
+        <dl class="system-list">
+          <div><dt>Champion</dt><dd>v1.7-FROZEN</dd></div>
+          <div><dt>Challenger</dt><dd>v1.14 Adaptive Fusion</dd></div>
+          <div><dt>Línea activa</dt><dd>v1.19 Causal Driver Discovery</dd></div>
+          <div><dt>Operaciones reales</dt><dd class="safe">DESHABILITADAS</dd></div>
+          <div><dt>Proveedor online</dt><dd id="marketProvider">—</dd></div>
+        </dl>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <span>NEXUS-MFP · Research infrastructure</span>
+    <span id="clock">—</span>
+  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

@@ -53,7 +53,9 @@ La rama `methodology/point-in-time-foundation` corrige primero la infraestructur
 - amplió métricas con Sortino, hit rate, turnover y costos del overlay;
 - añadió tests ejecutables mediante `verify.ps1`.
 
-Hasta disponer de snapshots/vintages verdaderamente point-in-time, el peso permitido del Causal Engine es 0%.
+Hasta disponer de snapshots/vintages verdaderamente point-in-time, el peso permitido del Causal Engine es 0%. La infraestructura ya puede guardar snapshots inmutables y resolver el último disponible a una fecha de decisión, pero todavía no existe un archivo histórico poblado que reemplace los datos revisados.
+
+Además, toda promoción futura exige un block bootstrap circular emparejado de retornos netos contra v1.14: el límite inferior del intervalo 95% de la mejora anualizada debe ser positivo y la probabilidad bootstrap de mejora debe alcanzar 95%. La ausencia de muestra suficiente bloquea la promoción.
 
 ### Validación reproducida el 2026-09-23
 
@@ -67,4 +69,4 @@ La cadena reanudable alcanzó v1.19 bajo Python 3.10. La reproducción con datos
 
 Estas cifras son una reproducción con historia ajustada/revisada disponible hoy; no reemplazan las referencias históricas de la migración ni recalibran el Champion.
 
-La corrida causal final terminó con código 0 y `CAUSAL_ENGINE_NO_EVIDENCE`: 0 observaciones OOS utilizables, peso causal 0%, peso v1.14 100% y promoción bloqueada. Las siete consultas FRED fallaron de forma visible, se usaron proxies declarados para investigación y CFTC provino de cache. Además de la falta de vintages point-in-time, el estado registra `insufficient_oos_results`.
+La corrida causal final terminó con código 0 y `CAUSAL_ENGINE_NO_EVIDENCE`: 0 observaciones OOS utilizables, peso causal 0%, peso v1.14 100% y promoción bloqueada. Las siete consultas FRED fallaron de forma visible, se usaron proxies declarados para investigación y CFTC provino de cache. Además de la falta de vintages point-in-time, el estado registra `insufficient_oos_results` y `bootstrap_evidence_unavailable`; las dos puertas aparecen separadas en los artefactos y fallan de forma cerrada.

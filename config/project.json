@@ -2,6 +2,7 @@
   "project": "NEXUS-MFP",
   "previous_name": "MFP-3",
   "canonical_entrypoint": "src/nexus_mfp.py",
+  "dashboard_entrypoint": "src/nexus_ui/server.py",
   "migration_version": "v1.19",
   "champion": "v1.7-FROZEN",
   "best_verified_challenger": "v1.14 Adaptive Fusion",

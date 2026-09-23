@@ -31,4 +31,14 @@
 - Añadidos timeouts explícitos para Yahoo/FRED y salida fail-closed `CAUSAL_ENGINE_NO_EVIDENCE` cuando no existe OOS suficiente.
 - Validada la cadena reanudable hasta v1.19: FRED falló visiblemente, los proxies quedaron declarados y el peso causal permaneció en 0%.
 - Sincronizados `causal_state.json`, `causal_sources.json` y `run_manifest.json` con los blockers y conteos finales.
+- Añadido almacén append-only de snapshots con hashes y selección temporal `as_of`; los vintages históricos aún deben poblarse.
+- Añadido block bootstrap circular emparejado contra v1.14; sin evidencia positiva al 95%, la promoción falla de forma cerrada.
 - `src/history/` y v1.7-FROZEN permanecen intactos.
+
+## Research Terminal — rama de trabajo
+
+- Añadido dashboard local estilo terminal bursátil para señales, cartera paper, métricas y gate causal.
+- Añadida actualización asíncrona de QQQ, ECH y CPER con timestamp, cache y error visible.
+- Añadido progreso observable de la cadena con fase, objetivo, PID, porcentaje monotónico, código de salida y consola viva.
+- Las acciones `AUMENTAR/MANTENER/REDUCIR` comparan peso paper actual contra objetivo; no son órdenes ni asesoría.
+- El servicio sólo escucha en localhost y no expone ninguna integración de trading real.

@@ -19,7 +19,9 @@ Antes de investigar un nuevo Causal Shock Decomposition Engine, NEXUS-MFP debe p
 
 La cadena reanudable completó hasta v1.19 bajo Python 3.10. En la ventana común reproducida, v1.14 obtuvo +74.901% y Sharpe 0.6550, v1.7 obtuvo +83.121% y Sharpe 0.6354, y el benchmark +244.708% y Sharpe 0.7991. Son resultados con los datos ajustados/revisados disponibles en la fecha de corrida, no una sustitución de los artefactos históricos congelados.
 
-v1.19 terminó sin evidencia causal suficiente: no produjo filas OOS promovibles, mantuvo peso causal 0 y registró el blocker `insufficient_oos_results`. FRED falló para las siete series solicitadas; los proxies se identificaron como proxies y el ledger marcó todos los inputs actuales como no point-in-time. Estado y manifiesto coinciden en el gate final.
+v1.19 terminó sin evidencia causal suficiente: no produjo filas OOS promovibles, mantuvo peso causal 0 y registró los blockers `insufficient_oos_results` y `bootstrap_evidence_unavailable`. FRED falló para las siete series solicitadas; los proxies se identificaron como proxies y el ledger marcó todos los inputs actuales como no point-in-time. Estado y manifiesto coinciden en ambos gates finales.
+
+La siguiente evolución ya incorpora dos piezas fail-closed: un almacén local inmutable de snapshots con selección `as_of` por fecha de recuperación, y un block bootstrap circular emparejado que compara retornos netos del candidato contra v1.14. Son infraestructura validada; no convierten la historia revisada existente en point-in-time ni sustituyen la carga futura de vintages ALFRED.
 
 ## Información nueva requerida para la siguiente fase
 
@@ -37,8 +39,10 @@ v1.19 terminó sin evidencia causal suficiente: no produjo filas OOS promovibles
 - placebos, controles negativos y pruebas inversas;
 - nested walk-forward con purga/embargo;
 - parámetros por grilla pequeña y prueba de sensibilidad;
-- block bootstrap para dependencia serial antes de considerar promoción;
+- block bootstrap circular emparejado para dependencia serial antes de considerar promoción;
 - peso inicial cero y promoción sólo usando OOS previamente observado.
+
+La promoción exige simultáneamente: inputs point-in-time válidos, evidencia OOS suficiente y límite inferior 95% positivo para la mejora anualizada neta frente a v1.14. Si la evidencia bootstrap no existe o falla, el peso causal sigue en cero.
 
 ## Validación requerida
 

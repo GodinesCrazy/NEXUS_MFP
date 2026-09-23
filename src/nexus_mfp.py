@@ -110,6 +110,7 @@ from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
+from nexus_core.bootstrap import paired_block_bootstrap
 from nexus_core.embedded import registered_module
 from nexus_core.provenance import (
     SourceRecord,
@@ -168,6 +169,10 @@ MIN_DRIVER_EVENTS = 40
 MAX_CAUSES_PER_ASSET = 12
 DISCOVERY_FDR_Q = 0.10
 VALIDATION_FDR_Q = 0.10
+BOOTSTRAP_BLOCK_SIZE = 20
+BOOTSTRAP_SAMPLES = 400
+BOOTSTRAP_MIN_PROBABILITY = 0.95
+BOOTSTRAP_SEED = 19
 
 CAUSAL_BLEND_WEIGHTS = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25]
 BLEND_WINDOWS = [252, 504]
@@ -1867,7 +1872,9 @@ def evidence_gated_fusion(causal_port, promotion_allowed):
     firsts = month_firsts(x.index)
 
     weights = pd.Series(0.0, index=x.index)
+    bootstrap_passes = pd.Series(False, index=x.index)
     current = 0.0
+    current_bootstrap = False
 
     for i, dt in enumerate(x.index):
         if i < 504:
@@ -1893,6 +1900,18 @@ def evidence_gated_fusion(causal_port, promotion_allowed):
                     causal_perf["sharpe"] > 0.25
                     and causal_perf["total_return"] > -0.05
                 )
+                bootstrap = None
+                bootstrap_ok = False
+                if promotion_allowed and engine_ok:
+                    bootstrap = paired_block_bootstrap(
+                        z["causal_ret"],
+                        z["fusion_ret"],
+                        block_size=BOOTSTRAP_BLOCK_SIZE,
+                        samples=BOOTSTRAP_SAMPLES,
+                        seed=BOOTSTRAP_SEED + i + window,
+                        minimum_probability=BOOTSTRAP_MIN_PROBABILITY,
+                    )
+                    bootstrap_ok = bootstrap.passes
 
                 for w in CAUSAL_BLEND_WEIGHTS:
                     ret = blend_return(z, w)
@@ -1908,6 +1927,7 @@ def evidence_gated_fusion(causal_port, promotion_allowed):
                             promotion_allowed
                             and
                             engine_ok
+                            and bootstrap_ok
                             and u > base_u + 0.005
                         )
                     )
@@ -1917,6 +1937,15 @@ def evidence_gated_fusion(causal_port, promotion_allowed):
                         "weight": w,
                         "utility": u,
                         "base_utility": base_u,
+                        "bootstrap_passes": bootstrap_ok if w > 0 else False,
+                        "bootstrap_probability_positive": (
+                            bootstrap.probability_positive
+                            if bootstrap is not None else 0.0
+                        ),
+                        "bootstrap_lower_95_annualized_delta": (
+                            bootstrap.lower_95_annualized_delta
+                            if bootstrap is not None else 0.0
+                        ),
                         "accepted": accepted,
                     })
 
@@ -1932,6 +1961,7 @@ def evidence_gated_fusion(causal_port, promotion_allowed):
                     ).iloc[0]
 
                     target = float(best["weight"])
+                    current_bootstrap = bool(best["bootstrap_passes"])
 
                     # Slow promotion / fast demotion.
                     if target > current:
@@ -1940,8 +1970,10 @@ def evidence_gated_fusion(causal_port, promotion_allowed):
                         current = target
 
         weights.loc[dt] = current
+        bootstrap_passes.loc[dt] = current_bootstrap
 
     x["causal_weight"] = weights
+    x["bootstrap_gate_passed"] = bootstrap_passes
     x["v14_weight"] = 1.0 - weights
     x["blend_turnover"] = weights.diff().abs().fillna(weights.abs())
     x["blend_transaction_cost"] = x["blend_turnover"] * ONE_WAY_COST
@@ -2109,6 +2141,8 @@ def run_causal_lab():
 
     records = availability_records(status)
     promotion_allowed, promotion_blockers = promotion_eligibility(records)
+    point_in_time_allowed = promotion_allowed
+    point_in_time_blockers = list(promotion_blockers)
     ledger_frame(records).to_csv(
         AVAILABILITY_CSV,
         index=False,
@@ -2161,6 +2195,10 @@ def run_causal_lab():
                     "max_asset_weight": MAX_ASSET_WEIGHT,
                     "discovery_fdr_q": DISCOVERY_FDR_Q,
                     "validation_fdr_q": VALIDATION_FDR_Q,
+                    "bootstrap_block_size": BOOTSTRAP_BLOCK_SIZE,
+                    "bootstrap_samples": BOOTSTRAP_SAMPLES,
+                    "bootstrap_min_probability": BOOTSTRAP_MIN_PROBABILITY,
+                    "bootstrap_seed": BOOTSTRAP_SEED,
                 },
                 "promotion_allowed": promotion_allowed,
                 "promotion_blockers": promotion_blockers,
@@ -2211,6 +2249,8 @@ def run_causal_lab():
         promotion_allowed = False
         promotion_blockers = list(promotion_blockers)
         promotion_blockers.append("insufficient_oos_results")
+        promotion_blockers.append("bootstrap_evidence_unavailable")
+        bootstrap_gate_passed = False
         yearly = pd.DataFrame(
             columns=["asset", "research_year", "status"]
         )
@@ -2231,6 +2271,7 @@ def run_causal_lab():
                 "causal_ret",
                 "causal_weight",
                 "v14_weight",
+                "bootstrap_gate_passed",
             ]
         )
         metrics = pd.DataFrame([
@@ -2261,13 +2302,31 @@ def run_causal_lab():
             promotion_allowed=promotion_allowed,
         )
 
+        bootstrap_gate_passed = bool(
+            len(fusion)
+            and "bootstrap_gate_passed" in fusion
+            and bool(fusion["bootstrap_gate_passed"].iloc[-1])
+        )
+        promotion_allowed = point_in_time_allowed and bootstrap_gate_passed
+        if not bootstrap_gate_passed:
+            promotion_blockers = list(promotion_blockers)
+            promotion_blockers.append("bootstrap_evidence_unavailable")
+
         metrics = metrics_table(causal_port, fusion)
 
         current = current_drivers(yearly, drivers)
 
     status["PROMOTION_GATE_POINT_IN_TIME"] = {
-        "ok": promotion_allowed,
-        "blockers": promotion_blockers,
+        "ok": point_in_time_allowed,
+        "blockers": point_in_time_blockers,
+        "policy": "fail_closed",
+    }
+    status["PROMOTION_GATE_BLOCK_BOOTSTRAP"] = {
+        "ok": bootstrap_gate_passed,
+        "blockers": (
+            [] if bootstrap_gate_passed
+            else ["bootstrap_evidence_unavailable"]
+        ),
         "policy": "fail_closed",
     }
     SOURCE_STATUS_JSON.write_text(
@@ -2288,6 +2347,8 @@ def run_causal_lab():
         "completed_at_utc": now_utc(),
         "promotion_allowed": promotion_allowed,
         "promotion_blockers": promotion_blockers,
+        "point_in_time_gate_passed": point_in_time_allowed,
+        "bootstrap_gate_passed": bootstrap_gate_passed,
         "result_rows": {
             "yearly": int(len(yearly)),
             "drivers": int(len(drivers)),
@@ -2350,6 +2411,8 @@ def run_causal_lab():
                 "latest_v14_weight": 1.0 - causal_weight,
                 "promotion_allowed": promotion_allowed,
                 "promotion_blockers": promotion_blockers,
+                "point_in_time_gate_passed": point_in_time_allowed,
+                "bootstrap_gate_passed": bootstrap_gate_passed,
             },
             indent=2,
         ),

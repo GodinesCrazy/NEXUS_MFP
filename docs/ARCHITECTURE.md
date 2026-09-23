@@ -38,6 +38,10 @@ Los archivos bajo `src/history/` permanecen inmutables. Las correcciones sólo s
 
 La promoción es fail-closed: si una fuente causal no es point-in-time, el laboratorio puede producir diagnósticos pero el peso del Causal Engine permanece en cero.
 
+## Research Terminal
+
+`src/nexus_ui/` añade una capa local y estrictamente paper sobre los artefactos de investigación. El servidor sólo enlaza a localhost, no contiene credenciales ni endpoints de broker y ejecuta la entrada canónica como subproceso observable. La UI separa cotizaciones online dependientes de disponibilidad, señales locales, métricas históricas y gate de promoción para evitar que una degradación de fuente se presente como certeza.
+
 ## Universo actual
 - QQQ: tecnología/growth EE.UU.
 - ECH: Chile.
