@@ -1,0 +1,30 @@
+{
+  "status": "HISTORICAL_CHAMPION_CANDIDATE",
+  "historical_tests": {
+    "data_quality_no_unresolved_flags": true,
+    "positive_return": true,
+    "sharpe_at_least_0_60": true,
+    "max_drawdown_better_than_-25pct": true,
+    "positive_year_rate_at_least_60pct": true,
+    "positive_at_double_cost": true,
+    "competitive_vs_benchmark": true
+  },
+  "mfp": {
+    "total_return": 1.5715136344625287,
+    "cagr": 0.1023302918461666,
+    "sharpe": 0.7725576558547885,
+    "max_drawdown": -0.17970104896473893,
+    "ann_vol": 0.13862204778562395,
+    "utility": 1.2057817460895932
+  },
+  "benchmark": {
+    "total_return": 3.2009858157432127,
+    "cagr": 0.15957765735916185,
+    "sharpe": 0.769812517754977,
+    "max_drawdown": -0.23058349857078597,
+    "ann_vol": 0.22547136005225948,
+    "utility": 1.7402782791940905
+  },
+  "forward_paper_required": true,
+  "note": "Champion definitivo requiere validación futura no usada en ninguna decisión de diseño."
+}

@@ -1,0 +1,5 @@
+date,series,raw_value,action,reason
+2014-04-10,CLP=X,5.460000038146973,replaced,FX_scale_or_jump
+2014-04-11,CLP=X,544.4000244140625,replaced,FX_scale_or_jump
+2016-12-22,CLP=X,5.0,replaced,FX_scale_or_jump
+2016-12-23,CLP=X,663.75,replaced,FX_scale_or_jump

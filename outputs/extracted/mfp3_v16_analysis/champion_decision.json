@@ -1,0 +1,30 @@
+{
+  "status": "CANDIDATE_NOT_CHAMPION",
+  "tests": {
+    "data_quality_clean": true,
+    "positive_total_return": true,
+    "sharpe_at_least_0_60": false,
+    "max_drawdown_better_than_-25pct": true,
+    "positive_year_rate_at_least_60pct": true,
+    "still_positive_at_double_cost": true,
+    "competitive_vs_benchmark": false
+  },
+  "mfp": {
+    "total_return": 0.5327758726995742,
+    "cagr": 0.04503892903326512,
+    "sharpe": 0.469070571400504,
+    "max_drawdown": -0.1899409757138224,
+    "ann_vol": 0.10588227985082578,
+    "fitness": 0.5320804926313704
+  },
+  "benchmark": {
+    "total_return": 3.200985507919736,
+    "cagr": 0.15957764859465584,
+    "sharpe": 0.7698123229783191,
+    "max_drawdown": -0.23058355622959703,
+    "ann_vol": 0.22547142631471362,
+    "fitness": 1.7402779392009886
+  },
+  "positive_year_rate": 0.7,
+  "high_cost_total_return": 0.0837227704774816
+}
