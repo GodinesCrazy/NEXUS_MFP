@@ -42,6 +42,8 @@ Para abrir la terminal gráfica local:
 
 Luego visita `http://127.0.0.1:8765`. La terminal muestra cotizaciones dependientes de disponibilidad, señales de rebalanceo paper, métricas, gate causal y progreso observable de la cadena. No contiene ejecución de órdenes reales.
 
+El Risk & Scenario Lab recalcula sensibilidad a costos sobre una ventana común, permite shocks lineales sobre la exposición actual y centraliza alertas de fuentes, vigencia y gates. Los shocks son simulaciones mecánicas de una sesión, no pronósticos ni VaR.
+
 La vista por activo explica la diferencia entre exposición actual y objetivo, desglosa el ensemble y separa explícitamente esa señal de la evidencia causal. Para iniciar el backfill resumible de ALFRED:
 
 ```powershell

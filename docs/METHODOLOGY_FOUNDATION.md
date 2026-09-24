@@ -52,6 +52,8 @@ El candidato debe compararse contra v1.7-FROZEN, v1.14 y benchmark en la misma v
 
 La corrida 2026 parcial se etiqueta como parcial y no puede tratarse como año completo.
 
+La sensibilidad a costos del terminal conserva una única ventana común. El escenario vigente de 15 bps one-way reconstruye exactamente el retorno neto reportado; los escenarios alternativos no se usan para seleccionar parámetros ni promover motores.
+
 ## Criterio de éxito o descarte
 
 Sólo justificaría continuar hacia asignación de capital si mejora de forma repetida y estadísticamente defendible la utilidad neta de v1.14 en validation y future OOS, sin empeorar materialmente drawdown o sensibilidad a costos.

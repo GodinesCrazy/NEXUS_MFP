@@ -57,6 +57,7 @@ function renderDashboard(data) {
   document.getElementById('disclaimer').textContent = data.disclaimer;
   renderSignals(data.signals);
   renderAssetDetail(data.asset_details || []);
+  renderRisk(data);
   renderMetrics(data.metrics);
   drawEquity(data.equity);
   const blockers = data.causal_gate.blockers || [];
@@ -117,7 +118,49 @@ function renderAssetDetail(details) {
   document.getElementById('causalDrivers').innerHTML = detail.causal_drivers.length
     ? detail.causal_drivers.map(item => `<div class="driver-row"><span>${escapeHtml(item.driver)}</span><strong>${escapeHtml(item.status)}</strong></div>`).join('')
     : '<div class="evidence-empty"><strong>0% PESO CAUSAL</strong><span>No existen drivers promovibles para esta señal.</span></div>';
+  document.getElementById('horizonStatus').innerHTML = (detail.horizons || []).map(item => `<div><strong>${item.sessions}S</strong><span>${item.status === 'candidate' ? `${item.evidence_count} candidatos` : 'sin evidencia OOS'}</span></div>`).join('');
   document.getElementById('detailExplanation').textContent = detail.explanation;
+}
+
+function renderRisk(data) {
+  const sensitivity = data.cost_sensitivity || { scenarios: [] };
+  document.getElementById('commonWindow').textContent = sensitivity.observations
+    ? `${sensitivity.observations} SESIONES · ${String(sensitivity.start).slice(0, 10)} → ${String(sensitivity.end).slice(0, 10)}`
+    : 'VENTANA NO DISPONIBLE';
+  const costBody = document.getElementById('costTable');
+  costBody.innerHTML = sensitivity.scenarios.length
+    ? sensitivity.scenarios.map(item => `<tr class="${item.cost_bps === 15 ? 'current-cost' : ''}"><td>${item.cost_bps}${item.cost_bps === 15 ? ' · ACTUAL' : ''}</td><td>${pct(item.total_return)}</td><td>${Number(item.sharpe).toFixed(3)}</td><td>${pct(item.max_drawdown)}</td><td>-${pct(item.return_drag)}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No hay retornos brutos y turnover alineados.</td></tr>';
+  const alerts = data.alerts || [];
+  document.getElementById('alertCount').textContent = alerts.length;
+  document.getElementById('alertStack').innerHTML = alerts.length
+    ? alerts.map(item => `<div class="alert-item ${escapeHtml(item.severity)}"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join('')
+    : '<div class="alert-item ok"><strong>Sin alertas activas</strong><span>Los controles locales no reportan degradación.</span></div>';
+  const freshness = data.evidence_freshness || {};
+  document.getElementById('evidenceFreshness').textContent = freshness.age_days == null
+    ? 'Vigencia causal: sin corrida registrada'
+    : `Vigencia causal: ${Number(freshness.age_days).toFixed(1)} días · ${String(freshness.status).toUpperCase()} · límite ${freshness.max_age_days} días`;
+  document.querySelectorAll('[data-shock-asset]').forEach(input => { input.oninput = renderShockScenario; });
+  renderShockScenario();
+}
+
+function renderShockScenario() {
+  const details = state.dashboard?.asset_details || [];
+  let impact = 0;
+  document.querySelectorAll('[data-shock-asset]').forEach(input => {
+    const asset = input.dataset.shockAsset;
+    const shock = Number(input.value || 0) / 100;
+    const detail = details.find(item => item.asset === asset);
+    impact += Number(detail?.current_weight || 0) * shock;
+    document.getElementById(`shock${asset}`).textContent = `${Number(input.value) > 0 ? '+' : ''}${input.value}%`;
+  });
+  const impactNode = document.getElementById('shockImpact');
+  impactNode.textContent = `${impact > 0 ? '+' : ''}${pct(impact)}`;
+  impactNode.className = impact > 0 ? 'positive' : impact < 0 ? 'negative' : '';
+  const portfolio = Number(state.dashboard?.portfolio?.value_clp || 0);
+  document.getElementById('shockValue').textContent = portfolio
+    ? `Cartera estimada ${money(portfolio * (1 + impact))} · cambio ${money(portfolio * impact)}`
+    : 'Sin valoración de cartera';
 }
 
 function renderMetrics(metrics) {

@@ -10,6 +10,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
+from nexus_core.scenarios import transaction_cost_sensitivity
+
 
 ASSETS = ("QQQ", "ECH", "CPER")
 
@@ -75,6 +79,18 @@ def _ensemble_components(value: str) -> list[dict[str, Any]]:
         {"name": name, "weight": weight}
         for name, weight in sorted(totals.items(), key=lambda item: -item[1])
     ]
+
+
+def _age_days(value: str | None) -> float | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return max(0.0, (datetime.now(timezone.utc) - parsed).total_seconds() / 86400.0)
+    except ValueError:
+        return None
 
 
 class DashboardRepository:
@@ -189,6 +205,25 @@ class DashboardRepository:
                     "benchmark": _number(row.get("benchmark_capital_clp")),
                 })
 
+        try:
+            portfolio_index = pd.to_datetime([
+                row.get("", row.get("date")) for row in portfolio_raw
+            ])
+            cost_sensitivity = transaction_cost_sensitivity(
+                pd.Series(
+                    [_number(row.get("portfolio_gross_ret")) for row in portfolio_raw],
+                    index=portfolio_index,
+                ),
+                pd.Series(
+                    [_number(row.get("portfolio_turnover")) for row in portfolio_raw],
+                    index=portfolio_index,
+                ),
+            )
+        except (TypeError, ValueError):
+            cost_sensitivity = {
+                "observations": 0, "start": None, "end": None, "scenarios": []
+            }
+
         source_status = {
             name: info
             for name, info in source_payload.get("sources", {}).items()
@@ -236,6 +271,14 @@ class DashboardRepository:
                     "de v1.7-FROZEN. La intensidad no representa probabilidad ni confianza."
                 ),
                 "risk_notes": blockers[:4],
+                "horizons": [
+                    {
+                        "sessions": horizon,
+                        "status": "candidate" if drivers else "no_promotable_evidence",
+                        "evidence_count": len(drivers),
+                    }
+                    for horizon in (1, 5, 20)
+                ],
             })
 
         vintage_series = vintage_status.get("series", [])
@@ -252,6 +295,53 @@ class DashboardRepository:
             "snapshots": sum(
                 int(item.get("previously_stored", 0)) + int(item.get("created", 0))
                 for item in vintage_series
+            ),
+        }
+
+        alerts = []
+        if not vintages["promotion_ready"]:
+            alerts.append({
+                "id": "vintages",
+                "severity": "warning",
+                "title": "Historia point-in-time incompleta",
+                "detail": vintages["message"] or f"Estado ALFRED: {vintages['status']}",
+                "blocking": True,
+            })
+        if failed_sources:
+            alerts.append({
+                "id": "sources",
+                "severity": "critical",
+                "title": f"{len(failed_sources)} fuentes degradadas",
+                "detail": ", ".join(failed_sources[:5]) + ("…" if len(failed_sources) > 5 else ""),
+                "blocking": True,
+            })
+        if not causal_state.get("promotion_allowed", False):
+            alerts.append({
+                "id": "causal_gate",
+                "severity": "info",
+                "title": "Causal Engine sin promoción",
+                "detail": "El motor permanece en peso 0 hasta superar point-in-time y bootstrap.",
+                "blocking": True,
+            })
+        signal_age = _age_days(
+            f"{signals[0]['date']}T23:59:59+00:00" if signals and signals[0]["date"] else None
+        )
+        if signal_age is not None and signal_age > 3:
+            alerts.append({
+                "id": "stale_signal",
+                "severity": "warning",
+                "title": "Señal paper posiblemente vencida",
+                "detail": f"Última señal hace {signal_age:.1f} días calendario.",
+                "blocking": False,
+            })
+        evidence_age = _age_days(causal_state.get("last_completed_utc"))
+        evidence_freshness = {
+            "age_days": evidence_age,
+            "max_age_days": 30,
+            "status": (
+                "missing" if evidence_age is None
+                else "stale" if evidence_age > 30
+                else "fresh"
             ),
         }
 
@@ -279,6 +369,7 @@ class DashboardRepository:
             "asset_details": asset_details,
             "metrics": metrics,
             "equity": equity,
+            "cost_sensitivity": cost_sensitivity,
             "causal_gate": {
                 "promotion_allowed": bool(causal_state.get("promotion_allowed", False)),
                 "causal_weight": _number(causal_state.get("latest_causal_weight")),
@@ -292,6 +383,8 @@ class DashboardRepository:
                 "failed_count": len(failed_sources),
             },
             "vintages": vintages,
+            "alerts": alerts,
+            "evidence_freshness": evidence_freshness,
             "disclaimer": (
                 "Señales de investigación y cartera paper. No constituyen una orden "
                 "ni asesoría financiera; NEXUS-MFP no ejecuta operaciones reales."

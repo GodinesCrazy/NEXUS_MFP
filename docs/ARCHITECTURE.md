@@ -44,6 +44,8 @@ La promoción es fail-closed: si una fuente causal no es point-in-time, el labor
 
 `src/nexus_data/` contiene la adquisición point-in-time. El conector ALFRED consulta fechas de vintage y observaciones con un período de tiempo real exacto, escribe snapshots inmutables bajo `runtime/vintages/` y mantiene el gate cerrado hasta completar todas las series. La clave FRED sólo se lee desde el entorno.
 
+`src/nexus_core/scenarios.py` concentra cálculos de escenarios auditables. La sensibilidad a costos conserva la misma ventana y cambia sólo el costo aplicado al turnover; el shock de cartera es lineal, de un período y con pesos fijos. La UI no recalibra modelos ni convierte estos diagnósticos en órdenes.
+
 ## Universo actual
 - QQQ: tecnología/growth EE.UU.
 - ECH: Chile.

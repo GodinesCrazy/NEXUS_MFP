@@ -40,6 +40,12 @@ La barra representa hitos reales emitidos por la cadena, no una estimación de t
 
 QQQ, ECH y CPER disponen de una ficha seleccionable con exposición actual, objetivo, diferencia y componentes del ensemble. La intensidad de asignación no se etiqueta como confianza ni probabilidad. Si `current_causal_drivers.csv` no contiene evidencia promovible, la ficha declara 0% causal en lugar de construir una narrativa retrospectiva.
 
+## Risk & Scenario Lab
+
+La sensibilidad a costos reconstruye los retornos netos usando `portfolio_gross_ret - portfolio_turnover × costo` para 5, 15, 30 y 50 bps one-way. Todos los escenarios usan exactamente las mismas 2.443 sesiones; 15 bps reconcilia con el retorno histórico reportado sin diferencia.
+
+El simulador de shocks mantiene fijos los pesos actuales y deja el efectivo sin retorno. Su resultado es una identidad lineal de una sesión, no una distribución predictiva, VaR ni recomendación. El centro de alertas separa degradación de fuentes, historia point-in-time incompleta, vigencia de evidencia y bloqueo causal.
+
 ## Ingesta ALFRED
 
 `src/nexus_data/alfred.py` usa los endpoints oficiales de observaciones y fechas de vintage de FRED/ALFRED. Cada snapshot separa:
@@ -66,9 +72,10 @@ La ingesta es incremental mediante `vintages.ps1`. Los estados `credential_missi
 
 - detalle por activo y componentes de asignación implementado;
 - estado causal vacío explícito, sin narrativa inventada;
-- detalle por horizonte y waterfall causal (pendiente de evidencia OOS);
-- comparación de escenarios y sensibilidad a costos;
-- alertas locales de fuentes, drift y vencimiento de evidencia.
+- estado por horizontes 1/5/20 sesiones implementado;
+- comparación de escenarios y sensibilidad a costos implementada;
+- alertas locales de fuentes y vencimiento de evidencia implementadas;
+- waterfall causal y medición de drift (pendientes de evidencia OOS suficiente).
 
 ### Fase 4 — operación paper multiusuario
 

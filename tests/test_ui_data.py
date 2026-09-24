@@ -56,6 +56,9 @@ class DashboardRepositoryTests(unittest.TestCase):
             self.assertEqual(snapshot["asset_details"][0]["asset"], "QQQ")
             self.assertEqual(snapshot["asset_details"][0]["causal_evidence"], "not_available")
             self.assertEqual(snapshot["vintages"]["status"], "not_run")
+            self.assertEqual([item["sessions"] for item in snapshot["asset_details"][0]["horizons"]], [1, 5, 20])
+            self.assertEqual(len(snapshot["cost_sensitivity"]["scenarios"]), 4)
+            self.assertTrue(any(item["id"] == "vintages" for item in snapshot["alerts"]))
 
 
 if __name__ == "__main__":

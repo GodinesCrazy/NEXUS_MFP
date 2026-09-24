@@ -130,7 +130,45 @@
         <div class="explain-card">
           <span class="kpi-label">Evidencia causal</span>
           <div id="causalDrivers" class="driver-stack"></div>
+          <div id="horizonStatus" class="horizon-strip"></div>
           <p id="detailExplanation" class="microcopy"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel risk-panel" id="riskLab">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow cyan">RISK &amp; SCENARIO LAB</p>
+          <h3>Costos, shocks y alertas operativas</h3>
+        </div>
+        <span class="status-chip neutral" id="commonWindow">VENTANA COMÚN —</span>
+      </div>
+      <div class="risk-grid">
+        <div class="risk-card">
+          <span class="kpi-label">Sensibilidad a costos</span>
+          <div class="table-wrap compact-table">
+            <table>
+              <thead><tr><th>bps</th><th>Retorno</th><th>Sharpe</th><th>Drawdown</th><th>Drag</th></tr></thead>
+              <tbody id="costTable"><tr><td colspan="5" class="empty">Calculando…</td></tr></tbody>
+            </table>
+          </div>
+          <p class="microcopy">Mismos días y retornos brutos; sólo cambia el costo one-way aplicado al turnover observado.</p>
+        </div>
+        <div class="risk-card">
+          <span class="kpi-label">Shock instantáneo de exposición</span>
+          <div class="shock-controls">
+            <label>QQQ <input type="range" min="-20" max="20" step="1" value="0" data-shock-asset="QQQ"><output id="shockQQQ">0%</output></label>
+            <label>ECH <input type="range" min="-20" max="20" step="1" value="0" data-shock-asset="ECH"><output id="shockECH">0%</output></label>
+            <label>CPER <input type="range" min="-20" max="20" step="1" value="0" data-shock-asset="CPER"><output id="shockCPER">0%</output></label>
+          </div>
+          <div class="shock-result"><span>Impacto estimado</span><strong id="shockImpact">0,00%</strong><small id="shockValue">—</small></div>
+          <p class="microcopy">Impacto mecánico de una sesión sobre pesos actuales. No es pronóstico, VaR ni recomendación.</p>
+        </div>
+        <div class="risk-card">
+          <div class="risk-card-heading"><span class="kpi-label">Centro de alertas</span><b id="alertCount">0</b></div>
+          <div class="alert-stack" id="alertStack"></div>
+          <p class="microcopy" id="evidenceFreshness">Vigencia de evidencia —</p>
         </div>
       </div>
     </section>

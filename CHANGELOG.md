@@ -46,3 +46,7 @@
 - La interfaz muestra 0% causal cuando no existen drivers promovibles y evita presentar intensidad como confianza.
 - Añadida ingesta resumible ALFRED con tiempos de adquisición/conocimiento separados, hashes y estado fail-closed.
 - Ejecutado el diagnóstico real: `FRED_API_KEY` ausente, estado `credential_missing`, cero vintages simulados.
+- Añadido Risk & Scenario Lab con costos one-way de 5/15/30/50 bps sobre una ventana común de 2.443 sesiones.
+- Añadido shock lineal por activo sobre pesos actuales, explícitamente no predictivo y sin ejecución de órdenes.
+- Añadido centro de alertas y estado causal por horizontes 1/5/20 sesiones.
+- Verificada reconciliación exacta entre el escenario de 15 bps y el retorno histórico reportado.
