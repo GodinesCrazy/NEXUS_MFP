@@ -42,12 +42,22 @@ Para abrir la terminal gráfica local:
 
 Luego visita `http://127.0.0.1:8765`. La terminal muestra cotizaciones dependientes de disponibilidad, señales de rebalanceo paper, métricas, gate causal y progreso observable de la cadena. No contiene ejecución de órdenes reales.
 
+La vista por activo explica la diferencia entre exposición actual y objetivo, desglosa el ensemble y separa explícitamente esa señal de la evidencia causal. Para iniciar el backfill resumible de ALFRED:
+
+```powershell
+$env:FRED_API_KEY = "tu_clave_personal"
+.\vintages.ps1 --max-new-vintages 25
+```
+
+La clave no se persiste. Sin ella, el comando registra `credential_missing` y no fabrica datos. Un estado parcial tampoco habilita promoción.
+
 ## Estructura
 
 - `src/nexus_mfp.py`: versión actual de trabajo (v1.19 al migrar).
 - `src/nexus_core/`: contratos testeables de temporalidad, proveniencia, estadística, snapshots point-in-time, bootstrap y reproducibilidad.
 - `tests/`: pruebas que tienen prioridad sobre cualquier mejora de métricas.
 - `src/nexus_ui/`: API local, agregación de artefactos y terminal gráfica.
+- `src/nexus_data/`: conectores point-in-time resumibles con proveniencia explícita.
 - `src/history/`: versiones históricas y motores previos.
 - `docs/`: explicación técnica, arquitectura, estado y reglas de investigación.
 - `legacy_docs/`: README históricos del proyecto MFP-3.

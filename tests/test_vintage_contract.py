@@ -28,6 +28,50 @@ class VintageContractTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 store.write(**kwargs)
 
+    def test_alfred_knowledge_date_is_distinct_from_download_time(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = VintageSnapshotStore(Path(tmp))
+            data = pd.Series([7.5], index=pd.to_datetime(["2020-01-01"]), name="x")
+            store.write(
+                source="ALFRED",
+                variable="X",
+                retrieved_at="2026-09-23T12:00:00Z",
+                knowledge_at="2020-02-01T23:59:59Z",
+                source_vintage_date="2020-02-01",
+                data=data,
+                frequency="daily",
+                release_lag="encoded_by_alfred_realtime_period",
+            )
+            frame, metadata = store.as_of("ALFRED", "X", "2020-02-02T00:00:00Z")
+            self.assertEqual(float(frame.iloc[0, 0]), 7.5)
+            self.assertEqual(metadata.source_vintage_date, "2020-02-01")
+            self.assertTrue(metadata.retrieved_at_utc.startswith("2026-09-23"))
+
+    def test_materialized_series_uses_latest_value_known_at_each_vintage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = VintageSnapshotStore(Path(tmp))
+            for vintage, values in (
+                ("2020-02-01", [1.0]),
+                ("2020-03-01", [1.1, 2.0]),
+            ):
+                data = pd.Series(
+                    values,
+                    index=pd.to_datetime(["2020-01-01", "2020-02-01"][:len(values)]),
+                    name="x",
+                )
+                store.write(
+                    source="ALFRED",
+                    variable="X",
+                    retrieved_at="2026-09-23T12:00:00Z",
+                    knowledge_at=f"{vintage}T23:59:59Z",
+                    source_vintage_date=vintage,
+                    data=data,
+                    frequency="monthly",
+                    release_lag="encoded",
+                )
+            timeline = store.known_latest_series("ALFRED", "X")
+            self.assertEqual(timeline.tolist(), [1.0, 2.0])
+
 
 if __name__ == "__main__":
     unittest.main()

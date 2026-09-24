@@ -103,6 +103,38 @@
       </article>
     </section>
 
+    <section class="panel explain-panel" id="assetDetailPanel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow cyan">EXPLICABILIDAD POR ACTIVO</p>
+          <h3>Cómo se construye la exposición paper</h3>
+        </div>
+        <div class="asset-tabs" id="assetTabs" aria-label="Seleccionar activo"></div>
+      </div>
+      <div class="explain-grid">
+        <div class="decision-card">
+          <span class="kpi-label">Decisión observable</span>
+          <div class="decision-line"><strong id="detailAsset">—</strong><span id="detailAction" class="action MANTENER">—</span></div>
+          <div class="allocation-bar"><i id="allocationFill"></i></div>
+          <dl class="detail-stats">
+            <div><dt>Exposición actual</dt><dd id="detailCurrent">—</dd></div>
+            <div><dt>Objetivo</dt><dd id="detailTarget">—</dd></div>
+            <div><dt>Diferencia</dt><dd id="detailDelta">—</dd></div>
+          </dl>
+        </div>
+        <div class="explain-card">
+          <span class="kpi-label">Componentes del ensemble</span>
+          <div id="ensembleDrivers" class="driver-stack"></div>
+          <p class="microcopy">Pesos internos del modelo; no son probabilidades.</p>
+        </div>
+        <div class="explain-card">
+          <span class="kpi-label">Evidencia causal</span>
+          <div id="causalDrivers" class="driver-stack"></div>
+          <p id="detailExplanation" class="microcopy"></p>
+        </div>
+      </div>
+    </section>
+
     <section class="panel execution-panel">
       <div class="panel-heading execution-heading">
         <div>
@@ -153,6 +185,7 @@
           <div><dt>Línea activa</dt><dd>v1.19 Causal Driver Discovery</dd></div>
           <div><dt>Operaciones reales</dt><dd class="safe">DESHABILITADAS</dd></div>
           <div><dt>Proveedor online</dt><dd id="marketProvider">—</dd></div>
+          <div><dt>Vintages ALFRED</dt><dd id="vintageStatus">—</dd></div>
         </dl>
       </article>
     </section>

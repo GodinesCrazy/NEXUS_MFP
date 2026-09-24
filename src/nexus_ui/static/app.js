@@ -8,7 +8,7 @@ const ui = {
   toast: document.getElementById('toast'),
 };
 
-const state = { dashboard: null, market: null, run: null, toastTimer: null };
+const state = { dashboard: null, market: null, run: null, toastTimer: null, selectedAsset: 'QQQ' };
 
 const money = (value, currency = 'CLP') => new Intl.NumberFormat('es-CL', {
   style: 'currency', currency, maximumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -56,6 +56,7 @@ function renderDashboard(data) {
   document.getElementById('signalDate').textContent = `SEÑAL ${data.portfolio.signal_date || '—'}`;
   document.getElementById('disclaimer').textContent = data.disclaimer;
   renderSignals(data.signals);
+  renderAssetDetail(data.asset_details || []);
   renderMetrics(data.metrics);
   drawEquity(data.equity);
   const blockers = data.causal_gate.blockers || [];
@@ -63,6 +64,10 @@ function renderDashboard(data) {
     ? blockers.map(item => `<span class="blocker">${escapeHtml(item)}</span>`).join('')
     : '<span class="blocker">Sin blockers activos</span>';
   document.getElementById('promotionStatus').textContent = allowed ? 'ELEGIBLE' : `PESO ${pct(data.causal_gate.causal_weight)}`;
+  const vintage = data.vintages || {};
+  document.getElementById('vintageStatus').textContent = vintage.promotion_ready
+    ? `${vintage.series_complete}/${vintage.series_total} LISTO`
+    : `${String(vintage.status || 'not_run').toUpperCase()} · ${vintage.snapshots || 0} snapshots`;
 }
 
 function renderSignals(signals) {
@@ -71,13 +76,48 @@ function renderSignals(signals) {
     body.innerHTML = '<tr><td colspan="5" class="empty">No hay señales locales disponibles.</td></tr>';
     return;
   }
-  body.innerHTML = signals.map(signal => `<tr>
-    <td>${escapeHtml(signal.asset)}</td>
+  body.innerHTML = signals.map(signal => `<tr data-asset-row="${escapeHtml(signal.asset)}">
+    <td><button class="asset-link" data-asset="${escapeHtml(signal.asset)}">${escapeHtml(signal.asset)}</button></td>
     <td><span class="action ${escapeHtml(signal.action)}">${escapeHtml(signal.action)}</span></td>
     <td>${signal.current_weight == null ? '—' : pct(signal.current_weight)}</td>
     <td>${pct(signal.target_weight)}</td>
     <td title="${escapeHtml(signal.ensemble)}">${escapeHtml(signal.model_action || 'paper')}</td>
   </tr>`).join('');
+  body.querySelectorAll('[data-asset]').forEach(button => button.addEventListener('click', () => {
+    state.selectedAsset = button.dataset.asset;
+    renderAssetDetail(state.dashboard?.asset_details || []);
+    document.getElementById('assetDetailPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
+}
+
+function renderAssetDetail(details) {
+  const tabs = document.getElementById('assetTabs');
+  if (!details.length) {
+    tabs.innerHTML = '';
+    document.getElementById('causalDrivers').innerHTML = '<span class="empty-inline">Sin señales disponibles.</span>';
+    return;
+  }
+  if (!details.some(item => item.asset === state.selectedAsset)) state.selectedAsset = details[0].asset;
+  const detail = details.find(item => item.asset === state.selectedAsset);
+  tabs.innerHTML = details.map(item => `<button class="asset-tab ${item.asset === detail.asset ? 'active' : ''}" data-detail-asset="${escapeHtml(item.asset)}">${escapeHtml(item.asset)}</button>`).join('');
+  tabs.querySelectorAll('[data-detail-asset]').forEach(button => button.addEventListener('click', () => {
+    state.selectedAsset = button.dataset.detailAsset;
+    renderAssetDetail(details);
+  }));
+  document.getElementById('detailAsset').textContent = detail.asset;
+  const action = document.getElementById('detailAction');
+  action.textContent = detail.action; action.className = `action ${detail.action}`;
+  document.getElementById('detailCurrent').textContent = detail.current_weight == null ? '—' : pct(detail.current_weight);
+  document.getElementById('detailTarget').textContent = pct(detail.target_weight);
+  document.getElementById('detailDelta').textContent = detail.weight_delta == null ? '—' : `${detail.weight_delta >= 0 ? '+' : ''}${pct(detail.weight_delta)}`;
+  document.getElementById('allocationFill').style.width = `${Number(detail.allocation_strength || 0) * 100}%`;
+  document.getElementById('ensembleDrivers').innerHTML = detail.ensemble_components.length
+    ? detail.ensemble_components.map(item => `<div class="driver-row"><span>${escapeHtml(item.name)}</span><strong>${pct(item.weight)}</strong></div>`).join('')
+    : '<span class="empty-inline">Sin desglose del ensemble.</span>';
+  document.getElementById('causalDrivers').innerHTML = detail.causal_drivers.length
+    ? detail.causal_drivers.map(item => `<div class="driver-row"><span>${escapeHtml(item.driver)}</span><strong>${escapeHtml(item.status)}</strong></div>`).join('')
+    : '<div class="evidence-empty"><strong>0% PESO CAUSAL</strong><span>No existen drivers promovibles para esta señal.</span></div>';
+  document.getElementById('detailExplanation').textContent = detail.explanation;
 }
 
 function renderMetrics(metrics) {

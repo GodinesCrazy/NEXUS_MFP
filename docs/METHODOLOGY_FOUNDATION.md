@@ -21,7 +21,9 @@ La cadena reanudable completó hasta v1.19 bajo Python 3.10. En la ventana comú
 
 v1.19 terminó sin evidencia causal suficiente: no produjo filas OOS promovibles, mantuvo peso causal 0 y registró los blockers `insufficient_oos_results` y `bootstrap_evidence_unavailable`. FRED falló para las siete series solicitadas; los proxies se identificaron como proxies y el ledger marcó todos los inputs actuales como no point-in-time. Estado y manifiesto coinciden en ambos gates finales.
 
-La siguiente evolución ya incorpora dos piezas fail-closed: un almacén local inmutable de snapshots con selección `as_of` por fecha de recuperación, y un block bootstrap circular emparejado que compara retornos netos del candidato contra v1.14. Son infraestructura validada; no convierten la historia revisada existente en point-in-time ni sustituyen la carga futura de vintages ALFRED.
+La siguiente evolución ya incorpora dos piezas fail-closed: un almacén local inmutable de snapshots con selección `as_of` por fecha de conocimiento, y un block bootstrap circular emparejado que compara retornos netos del candidato contra v1.14. Son infraestructura validada; no convierten la historia revisada existente en point-in-time ni sustituyen la carga futura de vintages ALFRED.
+
+El almacén ahora separa fecha real de descarga (`retrieved_at_utc`) de fecha histórica de conocimiento declarada por la fuente (`knowledge_at_utc`). El conector ALFRED está implementado y probado, pero el diagnóstico local permanece en `credential_missing` hasta configurar `FRED_API_KEY`; por tanto, cero series se consideran completas y la promoción continúa bloqueada.
 
 ## Información nueva requerida para la siguiente fase
 

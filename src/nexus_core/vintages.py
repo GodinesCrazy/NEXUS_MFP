@@ -38,6 +38,8 @@ class SnapshotMetadata:
     content_sha256: str
     rows: int
     point_in_time: bool = True
+    knowledge_at_utc: str | None = None
+    source_vintage_date: str | None = None
 
 
 class VintageSnapshotStore:
@@ -52,12 +54,15 @@ class VintageSnapshotStore:
         source: str,
         variable: str,
         retrieved_at,
+        knowledge_at=None,
         data: pd.Series | pd.DataFrame,
         frequency: str,
         release_lag: str,
+        source_vintage_date: str | None = None,
     ) -> SnapshotMetadata:
         retrieved = _utc(retrieved_at)
-        stamp = retrieved.strftime("%Y%m%dT%H%M%SZ")
+        knowledge = _utc(knowledge_at if knowledge_at is not None else retrieved_at)
+        stamp = knowledge.strftime("%Y%m%dT%H%M%SZ")
         directory = self.root / _slug(source) / _slug(variable)
         directory.mkdir(parents=True, exist_ok=True)
         stem = directory / stamp
@@ -76,6 +81,8 @@ class VintageSnapshotStore:
             release_lag=release_lag,
             content_sha256=digest,
             rows=int(len(frame)),
+            knowledge_at_utc=knowledge.isoformat(timespec="seconds"),
+            source_vintage_date=source_vintage_date,
         )
         csv_path.write_bytes(payload)
         json_path.write_text(
@@ -90,18 +97,51 @@ class VintageSnapshotStore:
         eligible: list[tuple[datetime, Path]] = []
         for metadata_path in directory.glob("*.json") if directory.exists() else []:
             payload = json.loads(metadata_path.read_text(encoding="utf-8"))
-            retrieved = _utc(payload["retrieved_at_utc"])
-            if retrieved <= cutoff:
-                eligible.append((retrieved, metadata_path))
+            known = _utc(
+                payload.get("knowledge_at_utc")
+                or payload["retrieved_at_utc"]
+            )
+            if known <= cutoff:
+                eligible.append((known, metadata_path))
         if not eligible:
             raise LookupError(
                 f"sin snapshot {source}/{variable} disponible en {cutoff.isoformat()}"
             )
         _, metadata_path = max(eligible, key=lambda item: item[0])
         payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+        payload.setdefault("knowledge_at_utc", payload["retrieved_at_utc"])
+        payload.setdefault("source_vintage_date", None)
         metadata = SnapshotMetadata(**payload)
         csv_path = metadata_path.with_suffix(".csv")
         raw = csv_path.read_bytes()
         if hashlib.sha256(raw).hexdigest() != metadata.content_sha256:
             raise ValueError(f"hash inválido para snapshot: {csv_path}")
         return pd.read_csv(csv_path, index_col=0, parse_dates=True), metadata
+
+    def known_latest_series(self, source: str, variable: str) -> pd.Series:
+        """Materialize the latest observation actually known at each vintage."""
+
+        directory = self.root / _slug(source) / _slug(variable)
+        points: dict[pd.Timestamp, float] = {}
+        for metadata_path in sorted(directory.glob("*.json")) if directory.exists() else []:
+            payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+            known = pd.Timestamp(
+                payload.get("knowledge_at_utc") or payload["retrieved_at_utc"]
+            )
+            csv_path = metadata_path.with_suffix(".csv")
+            raw = csv_path.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != payload["content_sha256"]:
+                raise ValueError(f"hash inválido para snapshot: {csv_path}")
+            frame = pd.read_csv(csv_path, index_col=0, parse_dates=True)
+            if frame.empty:
+                continue
+            index = pd.to_datetime(frame.index, utc=True, errors="coerce")
+            values = pd.to_numeric(frame.iloc[:, 0], errors="coerce")
+            eligible = values[(index <= known) & values.notna()]
+            if not eligible.empty:
+                points[known] = float(eligible.iloc[-1])
+        if not points:
+            return pd.Series(dtype=float, name=variable)
+        series = pd.Series(points, name=variable, dtype=float).sort_index()
+        series.index = series.index.tz_convert(None)
+        return series[~series.index.duplicated(keep="last")]

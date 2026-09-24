@@ -42,3 +42,7 @@
 - Añadido progreso observable de la cadena con fase, objetivo, PID, porcentaje monotónico, código de salida y consola viva.
 - Las acciones `AUMENTAR/MANTENER/REDUCIR` comparan peso paper actual contra objetivo; no son órdenes ni asesoría.
 - El servicio sólo escucha en localhost y no expone ninguna integración de trading real.
+- Añadida ficha explicativa seleccionable para QQQ, ECH y CPER con exposición, objetivo y componentes del ensemble.
+- La interfaz muestra 0% causal cuando no existen drivers promovibles y evita presentar intensidad como confianza.
+- Añadida ingesta resumible ALFRED con tiempos de adquisición/conocimiento separados, hashes y estado fail-closed.
+- Ejecutado el diagnóstico real: `FRED_API_KEY` ausente, estado `credential_missing`, cero vintages simulados.

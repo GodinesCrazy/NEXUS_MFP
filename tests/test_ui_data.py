@@ -53,6 +53,9 @@ class DashboardRepositoryTests(unittest.TestCase):
             self.assertFalse(snapshot["causal_gate"]["promotion_allowed"])
             self.assertEqual(snapshot["sources"]["failed_count"], 1)
             self.assertFalse(snapshot["model"]["live_trading_enabled"])
+            self.assertEqual(snapshot["asset_details"][0]["asset"], "QQQ")
+            self.assertEqual(snapshot["asset_details"][0]["causal_evidence"], "not_available")
+            self.assertEqual(snapshot["vintages"]["status"], "not_run")
 
 
 if __name__ == "__main__":

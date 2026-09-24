@@ -53,7 +53,7 @@ La rama `methodology/point-in-time-foundation` corrige primero la infraestructur
 - amplió métricas con Sortino, hit rate, turnover y costos del overlay;
 - añadió tests ejecutables mediante `verify.ps1`.
 
-Hasta disponer de snapshots/vintages verdaderamente point-in-time, el peso permitido del Causal Engine es 0%. La infraestructura ya puede guardar snapshots inmutables y resolver el último disponible a una fecha de decisión, pero todavía no existe un archivo histórico poblado que reemplace los datos revisados.
+Hasta disponer de snapshots/vintages verdaderamente point-in-time, el peso permitido del Causal Engine es 0%. La infraestructura ya puede guardar snapshots inmutables, distinguir descarga de conocimiento histórico y resolver el último disponible a una fecha de decisión. El conector ALFRED está listo y es resumible, pero el diagnóstico actual indica `credential_missing`; todavía no existe un archivo histórico poblado que reemplace los datos revisados.
 
 Además, toda promoción futura exige un block bootstrap circular emparejado de retornos netos contra v1.14: el límite inferior del intervalo 95% de la mejora anualizada debe ser positivo y la probabilidad bootstrap de mejora debe alcanzar 95%. La ausencia de muestra suficiente bloquea la promoción.
 

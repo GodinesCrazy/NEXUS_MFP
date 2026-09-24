@@ -64,6 +64,19 @@ def _paper_action(target: float, current: float | None) -> tuple[str, float | No
     return "MANTENER", delta
 
 
+def _ensemble_components(value: str) -> list[dict[str, Any]]:
+    totals: dict[str, float] = {}
+    for part in (value or "").split("+"):
+        name, separator, raw_weight = part.strip().rpartition(":")
+        if not separator or not name:
+            continue
+        totals[name] = totals.get(name, 0.0) + _number(raw_weight)
+    return [
+        {"name": name, "weight": weight}
+        for name, weight in sorted(totals.items(), key=lambda item: -item[1])
+    ]
+
+
 class DashboardRepository:
     """Build a stable UI snapshot from the newest local research artifacts."""
 
@@ -91,6 +104,8 @@ class DashboardRepository:
                 "forward_ledger": runtime_root / "mfp3_forward_v17" / "ledger.csv",
                 "causal_state": runtime_root / "mfp3_causal_driver_lab" / "causal_state.json",
                 "sources": runtime_root / "mfp3_causal_driver_lab" / "causal_sources.json",
+                "causal_drivers": runtime_root / "mfp3_causal_driver_lab" / "current_causal_drivers.csv",
+                "vintages": self.root / "runtime" / "vintages" / "status.json",
             }
         historical = self.root / "outputs" / "extracted" / "mfp3_v17_inspect"
         return {
@@ -102,6 +117,8 @@ class DashboardRepository:
             "forward_ledger": Path("__missing__"),
             "causal_state": Path("__missing__"),
             "sources": Path("__missing__"),
+            "causal_drivers": Path("__missing__"),
+            "vintages": self.root / "runtime" / "vintages" / "status.json",
         }
 
     def snapshot(self) -> dict:
@@ -113,6 +130,8 @@ class DashboardRepository:
         ledger_last = _last(_read_csv(paths["forward_ledger"]))
         causal_state = _read_json(paths["causal_state"])
         source_payload = _read_json(paths["sources"])
+        causal_drivers_raw = _read_csv(paths["causal_drivers"])
+        vintage_status = _read_json(paths["vintages"])
 
         portfolio_value = _number(ledger_last.get("portfolio_value_clp"), 0.0)
         usdclp = _number(ledger_last.get("usdclp"), 0.0)
@@ -186,6 +205,56 @@ class DashboardRepository:
                 max(path.stat().st_mtime for path in existing), timezone.utc
             ).isoformat(timespec="seconds")
 
+        asset_details = []
+        blockers = causal_state.get("promotion_blockers", ["sin_estado_causal"])
+        for signal in signals:
+            drivers = [
+                {
+                    "driver": row.get("driver", ""),
+                    "status": row.get("status", "candidate"),
+                    "direction": row.get("direction", row.get("sign", "")),
+                    "evidence": row.get("future_ic", row.get("validation_ic", "")),
+                }
+                for row in causal_drivers_raw
+                if row.get("asset") == signal["asset"] and row.get("driver")
+            ]
+            asset_details.append({
+                "asset": signal["asset"],
+                "action": signal["action"],
+                "model_action": signal["model_action"],
+                "target_weight": signal["target_weight"],
+                "current_weight": signal["current_weight"],
+                "weight_delta": signal["weight_delta"],
+                "allocation_strength": min(1.0, signal["target_weight"] / 0.30),
+                "signal_date": signal["date"],
+                "ensemble_components": _ensemble_components(signal["ensemble"]),
+                "causal_drivers": drivers,
+                "causal_evidence": "available" if drivers else "not_available",
+                "causal_weight": _number(causal_state.get("latest_causal_weight")),
+                "explanation": (
+                    "La acción compara la exposición paper actual con el peso objetivo "
+                    "de v1.7-FROZEN. La intensidad no representa probabilidad ni confianza."
+                ),
+                "risk_notes": blockers[:4],
+            })
+
+        vintage_series = vintage_status.get("series", [])
+        vintages = {
+            "status": vintage_status.get("status", "not_run"),
+            "provider": vintage_status.get("provider", "ALFRED"),
+            "updated_at_utc": vintage_status.get("updated_at_utc"),
+            "promotion_ready": bool(vintage_status.get("promotion_ready", False)),
+            "message": vintage_status.get(
+                "message", "La ingesta point-in-time todavía no se ha ejecutado."
+            ),
+            "series_complete": sum(bool(item.get("complete")) for item in vintage_series),
+            "series_total": len(vintage_series),
+            "snapshots": sum(
+                int(item.get("previously_stored", 0)) + int(item.get("created", 0))
+                for item in vintage_series
+            ),
+        }
+
         return {
             "generated_at_utc": _utc_now(),
             "artifact_updated_at_utc": updated,
@@ -207,6 +276,7 @@ class DashboardRepository:
                 ),
             },
             "signals": signals,
+            "asset_details": asset_details,
             "metrics": metrics,
             "equity": equity,
             "causal_gate": {
@@ -221,6 +291,7 @@ class DashboardRepository:
                 "failed": failed_sources,
                 "failed_count": len(failed_sources),
             },
+            "vintages": vintages,
             "disclaimer": (
                 "Señales de investigación y cartera paper. No constituyen una orden "
                 "ni asesoría financiera; NEXUS-MFP no ejecuta operaciones reales."

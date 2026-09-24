@@ -42,6 +42,8 @@ La promoción es fail-closed: si una fuente causal no es point-in-time, el labor
 
 `src/nexus_ui/` añade una capa local y estrictamente paper sobre los artefactos de investigación. El servidor sólo enlaza a localhost, no contiene credenciales ni endpoints de broker y ejecuta la entrada canónica como subproceso observable. La UI separa cotizaciones online dependientes de disponibilidad, señales locales, métricas históricas y gate de promoción para evitar que una degradación de fuente se presente como certeza.
 
+`src/nexus_data/` contiene la adquisición point-in-time. El conector ALFRED consulta fechas de vintage y observaciones con un período de tiempo real exacto, escribe snapshots inmutables bajo `runtime/vintages/` y mantiene el gate cerrado hasta completar todas las series. La clave FRED sólo se lee desde el entorno.
+
 ## Universo actual
 - QQQ: tecnología/growth EE.UU.
 - ECH: Chile.
