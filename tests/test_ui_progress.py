@@ -36,6 +36,14 @@ class RunProgressTests(unittest.TestCase):
         progress.ingest("MFP-3 ONE FILE v1.19 — CAUSAL DRIVER DISCOVERY ENGINE")
         self.assertEqual(progress.snapshot()["progress"], 2)
 
+    def test_forecast_phases_are_observable(self):
+        progress = RunProgress()
+        progress.start("forecast")
+        progress.ingest("FORECAST_PHASE walk_forward ECH")
+        state = progress.snapshot()
+        self.assertEqual(state["progress"], 52)
+        self.assertEqual(state["phase"], "Forecast · ECH")
+
 
 if __name__ == "__main__":
     unittest.main()

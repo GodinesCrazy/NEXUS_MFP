@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import asdict, dataclass
+from datetime import datetime
 
 
 @dataclass(frozen=True)
@@ -34,6 +35,12 @@ class ForecastDistribution:
             raise ValueError("probability_positive must be between 0 and 1")
         if self.horizon_sessions <= 0 or self.oos_observations < 0:
             raise ValueError("forecast horizons and observation counts are invalid")
+        try:
+            as_of = datetime.fromisoformat(self.as_of_utc.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("as_of_utc must be a valid ISO timestamp") from exc
+        if as_of.tzinfo is None:
+            raise ValueError("as_of_utc must include a timezone")
 
 
 @dataclass(frozen=True)

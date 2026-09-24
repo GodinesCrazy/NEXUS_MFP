@@ -44,6 +44,14 @@ Luego visita `http://127.0.0.1:8765`. La portada **Decisiones** separa la recome
 
 Mientras no exista un forecast probabilístico calibrado, promovido y con al menos 252 observaciones OOS, el sistema muestra `SIN RECOMENDACIÓN`. No transforma automáticamente un peso objetivo en `COMPRAR` o `VENDER`.
 
+Para ejecutar sólo el Challenger de pronóstico 1/5/20 sesiones:
+
+```powershell
+.\forecast.ps1
+```
+
+También puede seleccionarse `Pronóstico 1/5/20` en el control de ejecución de la vista Research. El motor registra primero la predicción paper en un ledger append-only y nunca envía órdenes.
+
 El Risk & Scenario Lab recalcula sensibilidad a costos sobre una ventana común, permite shocks lineales sobre la exposición actual y centraliza alertas de fuentes, vigencia y gates. Los shocks son simulaciones mecánicas de una sesión, no pronósticos ni VaR.
 
 La vista por activo explica la diferencia entre exposición actual y objetivo, desglosa el ensemble y separa explícitamente esa señal de la evidencia causal. Para iniciar el backfill resumible de ALFRED:
@@ -58,7 +66,7 @@ La clave no se persiste. Sin ella, el comando registra `credential_missing` y no
 ## Estructura
 
 - `src/nexus_mfp.py`: versión actual de trabajo (v1.19 al migrar).
-- `src/nexus_core/`: contratos testeables de temporalidad, proveniencia, estadística, snapshots point-in-time, bootstrap y reproducibilidad.
+- `src/nexus_core/`: contratos testeables de temporalidad, proveniencia, forecasting, decisiones, snapshots point-in-time, bootstrap y reproducibilidad.
 - `tests/`: pruebas que tienen prioridad sobre cualquier mejora de métricas.
 - `src/nexus_ui/`: API local, agregación de artefactos y terminal gráfica.
 - `src/nexus_data/`: conectores point-in-time resumibles con proveniencia explícita.

@@ -55,3 +55,10 @@
 - Separada la recomendación direccional de la acción de asignación v1.7 para evitar presentar rebalanceos como predicciones.
 - Añadida wallet auditada desde estado, ledger y eventos: efectivo, posiciones, base reconstruida, P&L, costos y objetivos.
 - Las cotizaciones online actualizan la valoración visual, pero no existe endpoint ni integración de órdenes reales.
+- Añadido Forecast Challenger `analog-v0.1` para horizontes 1/5/20 con features exclusivamente trailing.
+- Añadido walk-forward con labels maduros, baseline común, cobertura, Brier, acierto direccional y skill de MAE.
+- Añadido ledger append-only e idempotente de predicciones paper con outcome inicialmente nulo.
+- Separados los snapshots retrospectivos del ledger paper-forward; fuentes con más de una sesión de antigüedad no cuentan como evidencia forward.
+- Una revisión del dataset ya no puede duplicar la misma decisión `asset/as_of/horizonte/modelo`.
+- La primera ejecución produjo más de 2.150 observaciones OOS por combinación, pero ningún horizonte superó el baseline; promoción bloqueada.
+- Añadida ejecución observable `Pronóstico 1/5/20` y escenarios P10/P50/P90 en la portada de decisiones.

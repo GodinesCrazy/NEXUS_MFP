@@ -477,13 +477,28 @@ class DashboardRepository:
             "decisions": decisions,
             "forecast_status": {
                 "available": bool(forecasts),
+                "model_version": forecast_payload.get("model_version"),
                 "promoted_assets": sorted(
                     asset for asset, item in forecasts.items()
                     if item.promoted and item.calibrated
                 ),
+                "calibrated_assets": sorted(
+                    asset for asset, item in forecasts.items() if item.calibrated
+                ),
+                "source_point_in_time_verified": bool(
+                    forecast_payload.get("source_point_in_time_verified", False)
+                ),
+                "source_age_sessions": forecast_payload.get("source_age_sessions"),
+                "forward_registration_eligible": bool(
+                    forecast_payload.get("forward_registration_eligible", False)
+                ),
+                "registration_status": forecast_payload.get("registration_status"),
+                "evaluations": forecast_payload.get("evaluations", []),
                 "artifact": str(paths["forecasts"]) if paths["forecasts"].exists() else None,
                 "message": (
-                    "Pronósticos probabilísticos disponibles; sólo los promovidos pueden emitir recomendación."
+                    "Escenarios experimentales disponibles, pero la fuente no es suficientemente fresca para registro paper-forward."
+                    if forecasts and not forecast_payload.get("forward_registration_eligible", False)
+                    else "Pronósticos probabilísticos disponibles; sólo los promovidos pueden emitir recomendación."
                     if forecasts else
                     "Aún no existe un forecast probabilístico calibrado OOS. La asignación v1.7 se muestra por separado."
                 ),

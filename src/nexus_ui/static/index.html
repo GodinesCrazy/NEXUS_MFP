@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>NEXUS · Research Terminal</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -169,7 +170,7 @@
         <div class="decision-card">
           <span class="kpi-label">Decisión observable</span>
           <div class="decision-line"><strong id="detailAsset">—</strong><span id="detailAction" class="action MANTENER">—</span></div>
-          <div class="allocation-bar"><i id="allocationFill"></i></div>
+          <progress class="allocation-bar" id="allocationFill" max="100" value="0"></progress>
           <dl class="detail-stats">
             <div><dt>Exposición actual</dt><dd id="detailCurrent">—</dd></div>
             <div><dt>Objetivo</dt><dd id="detailTarget">—</dd></div>
@@ -239,6 +240,7 @@
           <select id="runMode" data-testid="run-mode">
             <option value="standard">Cadena por cadencia</option>
             <option value="causal">Forzar laboratorio causal</option>
+            <option value="forecast">Pronóstico 1/5/20</option>
           </select>
           <span class="run-state idle" id="runState">IDLE</span>
         </div>
@@ -248,7 +250,7 @@
         <strong id="runPercent">0%</strong>
       </div>
       <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressTrack">
-        <div class="progress-fill" id="progressFill"></div>
+        <progress class="progress-fill" id="progressFill" max="100" value="0"></progress>
       </div>
       <div class="phase-rail" id="phaseRail">
         <span>Bootstrap</span><span>Champion</span><span>Eventos</span><span>Discovery</span><span>Fusion</span><span>Causal</span><span>Cierre</span>

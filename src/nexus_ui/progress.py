@@ -16,6 +16,12 @@ class PhaseRule:
 
 
 PHASE_RULES = (
+    PhaseRule("FORECAST_PHASE load_source", 12, "Forecast · fuente", "Verificar y cargar artefactos OOS de v1.7"),
+    PhaseRule("FORECAST_PHASE walk_forward QQQ", 30, "Forecast · QQQ", "Evaluar análogos sin fuga temporal"),
+    PhaseRule("FORECAST_PHASE walk_forward ECH", 52, "Forecast · ECH", "Evaluar análogos sin fuga temporal"),
+    PhaseRule("FORECAST_PHASE walk_forward CPER", 74, "Forecast · CPER", "Evaluar análogos sin fuga temporal"),
+    PhaseRule("FORECAST_PHASE persist", 94, "Forecast · ledger", "Registrar predicciones antes de observar resultados"),
+    PhaseRule("FORECAST_COMPLETE", 99, "Forecast · gate", "Persistir métricas y resolver promoción"),
     PhaseRule("[1/4]", 8, "Champion v1.7", "Reconstruir o reutilizar el Champion congelado"),
     PhaseRule("[2/4]", 14, "Forward paper", "Actualizar la cartera paper, sin órdenes reales"),
     PhaseRule("[3/4]", 20, "Inteligencia de eventos", "Recolectar mercado, macro y noticias"),

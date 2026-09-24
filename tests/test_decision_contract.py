@@ -29,6 +29,10 @@ class DecisionContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             forecast(p10=105.0, p50=100.0)
 
+    def test_as_of_timestamp_requires_timezone(self):
+        with self.assertRaises(ValueError):
+            forecast(as_of_utc="2026-09-23T20:00:00")
+
     def test_promoted_positive_forecast_can_buy(self):
         result = DecisionPolicy().evaluate("QQQ", "AUMENTAR", forecast())
         self.assertEqual(result.recommendation, "COMPRAR")

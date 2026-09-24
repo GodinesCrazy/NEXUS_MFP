@@ -63,6 +63,14 @@ La terminal ahora trata la asignación de v1.7 y la recomendación direccional c
 
 La siguiente etapa es generar forecasts point-in-time para horizontes 1/5/20, registrar cada predicción antes de conocer el resultado, medir calibración y error por régimen y permitir una etiqueta `COMPRAR/VENDER` sólo después de superar el gate OOS. Las operaciones reales continúan deshabilitadas.
 
+### Primera ejecución del Forecast Challenger
+
+`analog-v0.1-challenger` ejecutó un walk-forward estricto para QQQ, ECH y CPER en horizontes 1/5/20. Cada combinación contó con 2.151–2.190 predicciones OOS. La cobertura P10–P90 estuvo entre 67,1% y 75,6%, y ninguna combinación mejoró el MAE mediano del baseline incondicional: el skill observado estuvo entre -0,37% y -5,09%.
+
+Consecuencia: el motor no está calibrado ni promovido. Sus escenarios se muestran sólo como distribución experimental. Los blockers explícitos incluyen falta de skill, gates de cobertura/Brier o dirección según el activo, historia no certificada point-in-time y evidencia paper-forward pendiente. La siguiente iteración debe mejorar el modelo; no relajar los gates.
+
+La fuente disponible tenía más de una sesión de antigüedad al registrar esta corrida. Por ello sus predicciones se clasifican como snapshots retrospectivos y no incrementan la muestra paper-forward. El identificador de predicción excluye el hash revisable del dataset para impedir que una revisión del mismo `asset/as_of/horizonte/modelo` duplique una decisión.
+
 ### Validación reproducida el 2026-09-23
 
 La cadena reanudable alcanzó v1.19 bajo Python 3.10. La reproducción con datos actuales obtuvo, en la ventana común de v1.14:

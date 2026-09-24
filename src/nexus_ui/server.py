@@ -31,16 +31,19 @@ class RunManager:
         self._process: subprocess.Popen | None = None
 
     def start(self, mode: str) -> tuple[bool, str]:
-        if mode not in {"standard", "causal"}:
+        if mode not in {"standard", "causal", "forecast"}:
             return False, "Modo inválido"
         with self._lock:
             if self._process and self._process.poll() is None:
                 return False, "Ya existe una ejecución activa"
             workspace = self.root / "runtime" / "terminal_workspace"
             workspace.mkdir(parents=True, exist_ok=True)
-            command = [sys.executable, "-u", str(self.root / "src" / "nexus_mfp.py")]
-            if mode == "causal":
-                command.append("--causal")
+            if mode == "forecast":
+                command = [sys.executable, "-u", str(self.root / "src" / "nexus_forecast.py")]
+            else:
+                command = [sys.executable, "-u", str(self.root / "src" / "nexus_mfp.py")]
+                if mode == "causal":
+                    command.append("--causal")
             env = os.environ.copy()
             env["PYTHONPATH"] = str(self.root / "src")
             creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -147,6 +150,7 @@ def handler_factory(app: TerminalApplication):
                 "/index.html": STATIC / "index.html",
                 "/styles.css": STATIC / "styles.css",
                 "/app.js": STATIC / "app.js",
+                "/favicon.svg": STATIC / "favicon.svg",
             }
             file_path = static_map.get(path)
             if file_path is None or not file_path.exists():

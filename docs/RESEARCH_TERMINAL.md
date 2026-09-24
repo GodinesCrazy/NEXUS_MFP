@@ -94,7 +94,17 @@ La ingesta es incremental mediante `vintages.ps1`. Los estados `credential_missi
 - contrato de forecast distributivo y abstención obligatoria implementado;
 - ledger de posiciones, efectivo, costos y rebalanceos visible;
 - recomendación direccional bloqueada hasta disponer de calibración OOS promovible;
-- entrenamiento walk-forward de los forecasts 1/5/20 y calibración por régimen (siguiente etapa).
+- entrenamiento walk-forward de los forecasts 1/5/20 ejecutado como Challenger `analog-v0.1`;
+- ledger append-only de predicciones y visualización P10/P50/P90 implementados;
+- calibración por régimen y modelo con skill incremental positivo (siguiente etapa).
+
+## Forecast Challenger `analog-v0.1`
+
+Para cada activo y horizonte, el motor construye en cada fecha únicamente features trailing conocidas: retornos 5/20/60, volatilidad de 20 sesiones y `ensemble_p_up` de v1.7. Compara el estado actual con análogos históricos y sólo admite como vecinos fechas cuyo retorno futuro ya había madurado en ese momento. La distribución ponderada de esos vecinos produce P10, P50, P90 y probabilidad positiva.
+
+El backtest walk-forward compara el error absoluto del P50 contra la mediana histórica incondicional en idénticas fechas. También registra cobertura P10–P90, Brier y acierto direccional. `prediction_ledger.jsonl` es append-only e idempotente; cada registro nace con outcome nulo. Sólo acepta una fuente con antigüedad máxima de una sesión. Ejecuciones tardías se guardan separadamente en `retrospective_prediction_ledger.jsonl` y no cuentan como evidencia forward.
+
+La primera ejecución obtuvo más de 2.150 observaciones OOS por combinación, pero ninguna consiguió skill positivo de error mediano contra el baseline. Además, la historia fuente aún no está certificada point-in-time y falta repetición paper-forward. Por ello todos los forecasts permanecen sin promoción y la UI conserva `SIN RECOMENDACIÓN`.
 
 ### Fase 4 — operación paper multiusuario
 

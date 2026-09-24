@@ -32,6 +32,8 @@ La rama de saneamiento conserva el entrypoint único y extrae únicamente contra
 - `provenance.py`: ledger de fuente, frecuencia, lag, vintage y fallback;
 - `statistics.py`: p-values, combinación de evidencia y Benjamini-Hochberg;
 - `reproducibility.py`: fingerprints deterministas de código, datos y features;
+- `forecasting.py`: análogos históricos walk-forward, evaluación común y ledger append-only;
+- `decisions.py`: contrato fail-closed que separa forecast direccional y asignación;
 - `embedded.py`: compatibilidad segura con la cadena histórica ejecutada mediante `exec`.
 
 Los archivos bajo `src/history/` permanecen inmutables. Las correcciones sólo se aplican a `src/nexus_mfp.py` y a su alias activo de compatibilidad.

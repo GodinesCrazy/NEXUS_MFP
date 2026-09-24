@@ -63,13 +63,20 @@ function renderDecisions(data) {
   grid.innerHTML = (data.decisions || []).length ? data.decisions.map(item => {
     const recommendationClass = ['COMPRAR','VENDER','MANTENER'].includes(item.recommendation) ? item.recommendation : '';
     const current = item.current_weight == null ? '—' : pct(item.current_weight);
+    const scenario = item.forecast ? `<div class="forecast-strip">
+      <div><span>P10</span><strong>${money(item.forecast.p10, 'USD')}</strong></div>
+      <div><span>P50 · ${item.forecast.horizon_sessions}S</span><strong>${money(item.forecast.p50, 'USD')}</strong></div>
+      <div><span>P90</span><strong>${money(item.forecast.p90, 'USD')}</strong></div>
+    </div><div class="forecast-meta"><span>Prob. positiva ${pct(item.forecast.probability_positive)}</span><span>${Number(item.forecast.oos_observations).toLocaleString('es-CL')} OOS</span></div>`
+      : '<div class="forecast-empty">SIN DISTRIBUCIÓN PREDICTIVA</div>';
     return `<article class="primary-decision" data-decision-asset="${escapeHtml(item.asset)}">
       <div class="decision-top"><span class="decision-symbol">${escapeHtml(item.asset)}</span><span class="decision-price" data-decision-price="${escapeHtml(item.asset)}">${money(item.reference_price_usd, 'USD')} · REF</span></div>
       <div class="recommendation ${recommendationClass}">${escapeHtml(item.recommendation)}</div>
       <div class="outlook">PERSPECTIVA ${escapeHtml(item.market_outlook)} · ${escapeHtml(item.status).toUpperCase()}</div>
       <p class="decision-reason">${escapeHtml(item.reason)}</p>
+      ${scenario}
       <div class="allocation-callout"><span>ACCIÓN DE CARTERA v1.7</span><strong>${escapeHtml(item.portfolio_action)}</strong></div>
-      <div class="weight-line"><span>${current}</span><div class="weight-track"><i style="width:${Math.min(100, Number(item.target_weight || 0) / .35 * 100)}%"></i></div><span>${pct(item.target_weight)}</span></div>
+      <div class="weight-line"><span>${current}</span><progress class="weight-track" max="100" value="${Math.min(100, Number(item.target_weight || 0) / .35 * 100)}"></progress><span>${pct(item.target_weight)}</span></div>
     </article>`;
   }).join('') : '<article class="primary-decision empty-decision">No hay decisiones disponibles.</article>';
 }
@@ -92,7 +99,7 @@ function renderWallet(wallet) {
     <td><span class="action ${escapeHtml(position.allocation_action)}">${escapeHtml(position.allocation_action)}</span></td>
   </tr>`).join('');
   const allocations = [...(wallet.positions || []).map(item => ({ name:item.asset, weight:item.current_weight || 0 })), { name:'CASH', weight:wallet.cash_weight || 0 }];
-  document.getElementById('walletAllocation').innerHTML = allocations.map(item => `<div class="allocation-row"><span>${escapeHtml(item.name)}</span><div><i style="width:${Math.min(100,item.weight*100)}%"></i></div><strong>${pct(item.weight)}</strong></div>`).join('');
+  document.getElementById('walletAllocation').innerHTML = allocations.map(item => `<div class="allocation-row"><span>${escapeHtml(item.name)}</span><progress max="100" value="${Math.min(100,item.weight*100)}"></progress><strong>${pct(item.weight)}</strong></div>`).join('');
   document.getElementById('walletHistory').innerHTML = (wallet.rebalance_history || []).length
     ? wallet.rebalance_history.map(item => `<div class="history-item"><div><strong>Rebalanceo · ${escapeHtml(item.signal_date || '—')}</strong><br><span>${dateTime(item.recorded_at_utc)}</span></div><div><strong>-${money(item.cost_clp)}</strong><br><small>COSTO</small></div></div>`).join('')
     : '<span class="empty-inline">Sin rebalanceos registrados.</span>';
@@ -174,7 +181,7 @@ function renderAssetDetail(details) {
   document.getElementById('detailCurrent').textContent = detail.current_weight == null ? '—' : pct(detail.current_weight);
   document.getElementById('detailTarget').textContent = pct(detail.target_weight);
   document.getElementById('detailDelta').textContent = detail.weight_delta == null ? '—' : `${detail.weight_delta >= 0 ? '+' : ''}${pct(detail.weight_delta)}`;
-  document.getElementById('allocationFill').style.width = `${Number(detail.allocation_strength || 0) * 100}%`;
+  document.getElementById('allocationFill').value = Number(detail.allocation_strength || 0) * 100;
   document.getElementById('ensembleDrivers').innerHTML = detail.ensemble_components.length
     ? detail.ensemble_components.map(item => `<div class="driver-row"><span>${escapeHtml(item.name)}</span><strong>${pct(item.weight)}</strong></div>`).join('')
     : '<span class="empty-inline">Sin desglose del ensemble.</span>';
@@ -323,11 +330,12 @@ function updateLivePrices(quotes) {
 }
 
 function renderRun(run) {
+  const previousStatus = state.run?.status;
   state.run = run;
   document.getElementById('runPhase').textContent = run.phase;
   document.getElementById('runObjective').textContent = run.objective;
   document.getElementById('runPercent').textContent = `${run.progress}%`;
-  document.getElementById('progressFill').style.width = `${run.progress}%`;
+  document.getElementById('progressFill').value = run.progress;
   document.getElementById('progressTrack').setAttribute('aria-valuenow', run.progress);
   const stateBadge = document.getElementById('runState');
   stateBadge.textContent = run.status.toUpperCase(); stateBadge.className = `run-state ${run.status}`;
@@ -338,6 +346,7 @@ function renderRun(run) {
   if (run.status === 'running') logs.scrollTop = logs.scrollHeight;
   ui.runModel.disabled = run.status === 'running';
   ui.runMode.disabled = run.status === 'running';
+  if (previousStatus === 'running' && run.status === 'completed') setTimeout(loadDashboard, 250);
 }
 
 async function loadDashboard() {
