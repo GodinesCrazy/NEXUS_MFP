@@ -20,6 +20,13 @@ La terminal convierte la cadena de investigación en un sistema observable para 
 
 ## Contrato de la señal visible
 
+La terminal separa formalmente dos conceptos:
+
+- **recomendación direccional:** `COMPRAR/MANTENER/VENDER/EVITAR`, derivada sólo de un forecast probabilístico calibrado y promovido;
+- **acción de cartera:** `AUMENTAR/MANTENER/REDUCIR`, derivada de la diferencia entre exposición paper actual y peso objetivo de v1.7.
+
+Si falta un forecast, no está promovido o contiene menos de 252 observaciones OOS, el `DecisionPolicy` devuelve `SIN RECOMENDACIÓN / NO CALIBRADO`. Los cuantiles deben ser válidos y la decisión descuenta costos antes de evaluar sus umbrales.
+
 La columna `Acción` compara el peso objetivo del Champion con el peso actual de la cartera paper:
 
 - `AUMENTAR`: diferencia superior a 2 puntos porcentuales;
@@ -27,6 +34,10 @@ La columna `Acción` compara el peso objetivo del Champion con el peso actual de
 - `MANTENER`: diferencia dentro de esa banda.
 
 No se presenta como orden ni asesoría. La UI muestra permanentemente `PAPER ONLY`, no contiene integración con brokers y el servidor no expone endpoints de compra/venta.
+
+## Wallet paper
+
+La wallet se reconstruye desde `state.json`, el último ledger y `rebalance_events.jsonl`. Expone efectivo, unidades, valorización, pesos, objetivo, costos y rebalanceos. La base de costo actual se identifica explícitamente como reconstruida desde el primer rebalanceo disponible; no se presenta como dato de broker. Las cotizaciones online pueden actualizar la valorización visual, pero son retrasadas y no crean órdenes.
 
 ## Datos online
 
@@ -76,6 +87,14 @@ La ingesta es incremental mediante `vintages.ps1`. Los estados `credential_missi
 - comparación de escenarios y sensibilidad a costos implementada;
 - alertas locales de fuentes y vencimiento de evidencia implementadas;
 - waterfall causal y medición de drift (pendientes de evidencia OOS suficiente).
+
+### Fase 3.1 — decisiones y wallet (primera entrega ejecutada)
+
+- portada de decisiones, wallet paper y Research como vistas separadas;
+- contrato de forecast distributivo y abstención obligatoria implementado;
+- ledger de posiciones, efectivo, costos y rebalanceos visible;
+- recomendación direccional bloqueada hasta disponer de calibración OOS promovible;
+- entrenamiento walk-forward de los forecasts 1/5/20 y calibración por régimen (siguiente etapa).
 
 ### Fase 4 — operación paper multiusuario
 

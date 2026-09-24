@@ -40,7 +40,9 @@ Para abrir la terminal gráfica local:
 .\dashboard.ps1
 ```
 
-Luego visita `http://127.0.0.1:8765`. La terminal muestra cotizaciones dependientes de disponibilidad, señales de rebalanceo paper, métricas, gate causal y progreso observable de la cadena. No contiene ejecución de órdenes reales.
+Luego visita `http://127.0.0.1:8765`. La portada **Decisiones** separa la recomendación direccional de la acción de asignación; **Wallet paper** muestra efectivo, posiciones, P&L estimado, costos y ledger, y **Research** conserva la evidencia técnica y el progreso de la cadena. No contiene ejecución de órdenes reales.
+
+Mientras no exista un forecast probabilístico calibrado, promovido y con al menos 252 observaciones OOS, el sistema muestra `SIN RECOMENDACIÓN`. No transforma automáticamente un peso objetivo en `COMPRAR` o `VENDER`.
 
 El Risk & Scenario Lab recalcula sensibilidad a costos sobre una ventana común, permite shocks lineales sobre la exposición actual y centraliza alertas de fuentes, vigencia y gates. Los shocks son simulaciones mecánicas de una sesión, no pronósticos ni VaR.
 

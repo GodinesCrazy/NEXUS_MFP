@@ -8,7 +8,7 @@ const ui = {
   toast: document.getElementById('toast'),
 };
 
-const state = { dashboard: null, market: null, run: null, toastTimer: null, selectedAsset: 'QQQ' };
+const state = { dashboard: null, market: null, run: null, toastTimer: null, selectedAsset: 'QQQ', currentView: 'decisions' };
 
 const money = (value, currency = 'CLP') => new Intl.NumberFormat('es-CL', {
   style: 'currency', currency, maximumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -37,6 +37,67 @@ function setConnection(online) {
   ui.connectionLabel.textContent = online ? 'LOCAL ONLINE' : 'SIN CONEXIÓN';
 }
 
+function setView(view) {
+  if (!['decisions', 'wallet', 'research'].includes(view)) view = 'decisions';
+  state.currentView = view;
+  document.querySelectorAll('.app-view').forEach(node => node.classList.toggle('active', node.id === `${view}View`));
+  document.querySelectorAll('[data-view-target]').forEach(node => node.classList.toggle('active', node.dataset.viewTarget === view));
+  if (location.hash !== `#${view}`) history.replaceState(null, '', `#${view}`);
+  if (view === 'research' && state.dashboard) requestAnimationFrame(() => drawEquity(state.dashboard.equity));
+}
+
+function renderDecisions(data) {
+  const status = data.forecast_status || {};
+  document.getElementById('forecastMessage').textContent = status.message || 'Sin estado de pronóstico.';
+  const gate = document.getElementById('forecastGate');
+  gate.classList.toggle('ready', Boolean(status.promoted_assets?.length));
+  gate.classList.toggle('blocked', !status.promoted_assets?.length);
+  gate.querySelector('strong').textContent = status.promoted_assets?.length ? 'EVIDENCIA PROMOVIDA' : 'NO CALIBRADO';
+  document.getElementById('decisionWalletValue').textContent = data.wallet?.value_clp ? money(data.wallet.value_clp) : '—';
+  const returnNode = document.getElementById('decisionWalletReturn');
+  returnNode.textContent = pct(data.wallet?.return_since_start);
+  returnNode.className = Number(data.wallet?.return_since_start) >= 0 ? 'positive' : 'negative';
+  document.getElementById('decisionWalletCash').textContent = money(data.wallet?.cash_clp);
+  document.getElementById('decisionSignalDate').textContent = data.portfolio?.signal_date || '—';
+  const grid = document.getElementById('decisionGrid');
+  grid.innerHTML = (data.decisions || []).length ? data.decisions.map(item => {
+    const recommendationClass = ['COMPRAR','VENDER','MANTENER'].includes(item.recommendation) ? item.recommendation : '';
+    const current = item.current_weight == null ? '—' : pct(item.current_weight);
+    return `<article class="primary-decision" data-decision-asset="${escapeHtml(item.asset)}">
+      <div class="decision-top"><span class="decision-symbol">${escapeHtml(item.asset)}</span><span class="decision-price" data-decision-price="${escapeHtml(item.asset)}">${money(item.reference_price_usd, 'USD')} · REF</span></div>
+      <div class="recommendation ${recommendationClass}">${escapeHtml(item.recommendation)}</div>
+      <div class="outlook">PERSPECTIVA ${escapeHtml(item.market_outlook)} · ${escapeHtml(item.status).toUpperCase()}</div>
+      <p class="decision-reason">${escapeHtml(item.reason)}</p>
+      <div class="allocation-callout"><span>ACCIÓN DE CARTERA v1.7</span><strong>${escapeHtml(item.portfolio_action)}</strong></div>
+      <div class="weight-line"><span>${current}</span><div class="weight-track"><i style="width:${Math.min(100, Number(item.target_weight || 0) / .35 * 100)}%"></i></div><span>${pct(item.target_weight)}</span></div>
+    </article>`;
+  }).join('') : '<article class="primary-decision empty-decision">No hay decisiones disponibles.</article>';
+}
+
+function renderWallet(wallet) {
+  if (!wallet) return;
+  document.getElementById('walletValue').textContent = money(wallet.value_clp);
+  document.getElementById('walletInvested').textContent = money(wallet.invested_clp);
+  document.getElementById('walletCash').textContent = money(wallet.cash_clp);
+  const pnl = document.getElementById('walletPnl');
+  pnl.textContent = `${money(wallet.pnl_since_start_clp)} · ${pct(wallet.return_since_start)}`;
+  pnl.className = Number(wallet.pnl_since_start_clp) >= 0 ? 'positive' : 'negative';
+  document.getElementById('walletCosts').textContent = money(wallet.cumulative_cost_clp);
+  document.getElementById('walletPositions').innerHTML = (wallet.positions || []).map(position => `<tr>
+    <td>${escapeHtml(position.asset)}</td><td>${Number(position.shares).toFixed(4)}</td>
+    <td data-wallet-price="${escapeHtml(position.asset)}">${money(position.price_usd, 'USD')}</td>
+    <td data-wallet-value="${escapeHtml(position.asset)}">${money(position.market_value_clp)}</td>
+    <td class="${Number(position.unrealized_pnl_clp) >= 0 ? 'positive' : 'negative'}">${position.unrealized_pnl_clp == null ? '—' : `${money(position.unrealized_pnl_clp)} · ${pct(position.unrealized_pnl_pct)}`}</td>
+    <td>${position.current_weight == null ? '—' : pct(position.current_weight)} → ${pct(position.target_weight)}</td>
+    <td><span class="action ${escapeHtml(position.allocation_action)}">${escapeHtml(position.allocation_action)}</span></td>
+  </tr>`).join('');
+  const allocations = [...(wallet.positions || []).map(item => ({ name:item.asset, weight:item.current_weight || 0 })), { name:'CASH', weight:wallet.cash_weight || 0 }];
+  document.getElementById('walletAllocation').innerHTML = allocations.map(item => `<div class="allocation-row"><span>${escapeHtml(item.name)}</span><div><i style="width:${Math.min(100,item.weight*100)}%"></i></div><strong>${pct(item.weight)}</strong></div>`).join('');
+  document.getElementById('walletHistory').innerHTML = (wallet.rebalance_history || []).length
+    ? wallet.rebalance_history.map(item => `<div class="history-item"><div><strong>Rebalanceo · ${escapeHtml(item.signal_date || '—')}</strong><br><span>${dateTime(item.recorded_at_utc)}</span></div><div><strong>-${money(item.cost_clp)}</strong><br><small>COSTO</small></div></div>`).join('')
+    : '<span class="empty-inline">Sin rebalanceos registrados.</span>';
+}
+
 function renderDashboard(data) {
   state.dashboard = data;
   document.getElementById('artifactTime').textContent = dateTime(data.artifact_updated_at_utc);
@@ -55,6 +116,8 @@ function renderDashboard(data) {
   document.getElementById('sourceDetail').textContent = data.sources.failed_count ? `${data.sources.failed_count} fuentes bloquean promoción` : 'Sin fallos reportados';
   document.getElementById('signalDate').textContent = `SEÑAL ${data.portfolio.signal_date || '—'}`;
   document.getElementById('disclaimer').textContent = data.disclaimer;
+  renderDecisions(data);
+  renderWallet(data.wallet);
   renderSignals(data.signals);
   renderAssetDetail(data.asset_details || []);
   renderRisk(data);
@@ -228,12 +291,35 @@ function renderMarket(market) {
   if (!market.quotes.length) {
     const fallback = state.dashboard?.signals || [];
     ui.tickerStrip.innerHTML = fallback.map(signal => `<div class="ticker"><strong class="ticker-symbol">${signal.asset}</strong><span class="ticker-value">${money(signal.price_usd, 'USD')}</span><span class="neutral-text">LOCAL</span></div>`).join('') || '<div class="ticker-skeleton">Mercado no disponible.</div>';
-    return;
+    updateLivePrices([]); return;
   }
   ui.tickerStrip.innerHTML = market.quotes.map(quote => {
     const positive = quote.change_window >= 0;
     return `<div class="ticker"><strong class="ticker-symbol">${escapeHtml(quote.asset)}</strong><div><div class="ticker-value">${money(quote.price_usd, 'USD')}</div><div class="ticker-change ${positive ? 'positive' : 'negative'}">${positive ? '+' : ''}${pct(quote.change_window)}</div></div>${sparkSvg(quote.points, positive)}</div>`;
   }).join('');
+  updateLivePrices(market.quotes);
+}
+
+function updateLivePrices(quotes) {
+  const wallet = state.dashboard?.wallet;
+  const quoteMap = Object.fromEntries((quotes || []).map(item => [item.asset, Number(item.price_usd)]));
+  document.querySelectorAll('[data-decision-price]').forEach(node => {
+    const price = quoteMap[node.dataset.decisionPrice];
+    if (price) node.textContent = `${money(price, 'USD')} · ONLINE`;
+  });
+  if (!wallet || !quotes.length) return;
+  let invested = 0;
+  for (const position of wallet.positions || []) {
+    const price = quoteMap[position.asset] || position.price_usd;
+    const value = Number(position.shares) * Number(price) * Number(wallet.usdclp);
+    invested += value;
+    const priceNode = document.querySelector(`[data-wallet-price="${position.asset}"]`);
+    const valueNode = document.querySelector(`[data-wallet-value="${position.asset}"]`);
+    if (priceNode) priceNode.textContent = `${money(price, 'USD')} · ONLINE`;
+    if (valueNode) valueNode.textContent = money(value);
+  }
+  document.getElementById('walletInvested').textContent = money(invested);
+  document.getElementById('walletValue').textContent = money(invested + Number(wallet.cash_clp));
 }
 
 function renderRun(run) {
@@ -277,10 +363,13 @@ ui.runModel.addEventListener('click', async () => {
     renderRun(payload); toast('Cadena NEXUS iniciada en segundo plano.');
   } catch (error) { toast(error.message); }
 });
+document.querySelectorAll('[data-view-target]').forEach(button => button.addEventListener('click', () => setView(button.dataset.viewTarget)));
+window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
 
 setInterval(() => { document.getElementById('clock').textContent = new Intl.DateTimeFormat('es-CL', { dateStyle:'medium', timeStyle:'medium' }).format(new Date()); }, 1000);
 setInterval(loadRun, 2000);
 setInterval(loadMarket, 10000);
 setInterval(loadDashboard, 60000);
-window.addEventListener('resize', () => state.dashboard && drawEquity(state.dashboard.equity));
+window.addEventListener('resize', () => state.dashboard && state.currentView === 'research' && drawEquity(state.dashboard.equity));
+setView(location.hash.slice(1) || 'decisions');
 Promise.all([loadDashboard(), loadMarket(), loadRun()]);

@@ -50,3 +50,8 @@
 - Añadido shock lineal por activo sobre pesos actuales, explícitamente no predictivo y sin ejecución de órdenes.
 - Añadido centro de alertas y estado causal por horizontes 1/5/20 sesiones.
 - Verificada reconciliación exacta entre el escenario de 15 bps y el retorno histórico reportado.
+- Añadidas vistas separadas `Decisiones`, `Wallet paper` y `Research` con navegación enlazable.
+- Añadido contrato `ForecastDistribution`/`DecisionPolicy`: sin calibración, promoción y muestra OOS suficiente devuelve `SIN RECOMENDACIÓN`.
+- Separada la recomendación direccional de la acción de asignación v1.7 para evitar presentar rebalanceos como predicciones.
+- Añadida wallet auditada desde estado, ledger y eventos: efectivo, posiciones, base reconstruida, P&L, costos y objetivos.
+- Las cotizaciones online actualizan la valoración visual, pero no existe endpoint ni integración de órdenes reales.

@@ -38,6 +38,15 @@ class DashboardRepositoryTests(unittest.TestCase):
                 "portfolio_value_clp,usdclp,qqq_usd,return_since_start\n10000000,900,100,0.01\n",
                 encoding="utf-8",
             )
+            (forward / "rebalance_events.jsonl").write_text(
+                json.dumps({
+                    "recorded_at_utc": "2026-01-02T20:00:00+00:00",
+                    "signal_date": "2026-01-02", "prices": {"QQQ": 95, "CLP=X": 900},
+                    "portfolio_before_clp": 10_000_000, "portfolio_after_cost_clp": 9_990_000,
+                    "cost_clp": 10_000, "targets": {"QQQ": 0.30},
+                }) + "\n",
+                encoding="utf-8",
+            )
             (causal / "causal_state.json").write_text(
                 json.dumps({"promotion_allowed": False, "latest_causal_weight": 0, "promotion_blockers": ["not_pit"]}),
                 encoding="utf-8",
@@ -59,6 +68,13 @@ class DashboardRepositoryTests(unittest.TestCase):
             self.assertEqual([item["sessions"] for item in snapshot["asset_details"][0]["horizons"]], [1, 5, 20])
             self.assertEqual(len(snapshot["cost_sensitivity"]["scenarios"]), 4)
             self.assertTrue(any(item["id"] == "vintages" for item in snapshot["alerts"]))
+            self.assertEqual(snapshot["decisions"][0]["recommendation"], "SIN RECOMENDACIÓN")
+            self.assertEqual(snapshot["decisions"][0]["portfolio_action"], "AUMENTAR")
+            self.assertFalse(snapshot["forecast_status"]["available"])
+            self.assertEqual(snapshot["wallet"]["mode"], "paper")
+            self.assertFalse(snapshot["wallet"]["real_orders_enabled"])
+            self.assertEqual(snapshot["wallet"]["positions"][0]["market_value_clp"], 900_000)
+            self.assertEqual(len(snapshot["wallet"]["rebalance_history"]), 1)
 
 
 if __name__ == "__main__":

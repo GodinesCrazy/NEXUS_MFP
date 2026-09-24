@@ -12,6 +12,7 @@ from typing import Any
 
 import pandas as pd
 
+from nexus_core.decisions import DecisionPolicy, ForecastDistribution
 from nexus_core.scenarios import transaction_cost_sensitivity
 
 
@@ -47,6 +48,21 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
             return list(csv.DictReader(handle))
     except OSError:
         return []
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    rows = []
+    try:
+        for line in path.read_text(encoding="utf-8-sig").splitlines():
+            if line.strip():
+                value = json.loads(line)
+                if isinstance(value, dict):
+                    rows.append(value)
+    except (OSError, ValueError):
+        return []
+    return rows
 
 
 def _last(rows: list[dict[str, str]]) -> dict[str, str]:
@@ -118,6 +134,8 @@ class DashboardRepository:
                 "portfolio_daily": runtime_root / "mfp3_output_v17" / "portfolio_daily.csv",
                 "forward_state": runtime_root / "mfp3_forward_v17" / "state.json",
                 "forward_ledger": runtime_root / "mfp3_forward_v17" / "ledger.csv",
+                "rebalance_events": runtime_root / "mfp3_forward_v17" / "rebalance_events.jsonl",
+                "forecasts": runtime_root / "mfp3_forecasts" / "latest.json",
                 "causal_state": runtime_root / "mfp3_causal_driver_lab" / "causal_state.json",
                 "sources": runtime_root / "mfp3_causal_driver_lab" / "causal_sources.json",
                 "causal_drivers": runtime_root / "mfp3_causal_driver_lab" / "current_causal_drivers.csv",
@@ -131,6 +149,8 @@ class DashboardRepository:
             "portfolio_daily": historical / "portfolio_daily.csv",
             "forward_state": Path("__missing__"),
             "forward_ledger": Path("__missing__"),
+            "rebalance_events": Path("__missing__"),
+            "forecasts": Path("__missing__"),
             "causal_state": Path("__missing__"),
             "sources": Path("__missing__"),
             "causal_drivers": Path("__missing__"),
@@ -144,6 +164,8 @@ class DashboardRepository:
         portfolio_raw = _read_csv(paths["portfolio_daily"])
         forward_state = _read_json(paths["forward_state"])
         ledger_last = _last(_read_csv(paths["forward_ledger"]))
+        rebalance_events = _read_jsonl(paths["rebalance_events"])
+        forecast_payload = _read_json(paths["forecasts"])
         causal_state = _read_json(paths["causal_state"])
         source_payload = _read_json(paths["sources"])
         causal_drivers_raw = _read_csv(paths["causal_drivers"])
@@ -180,6 +202,92 @@ class DashboardRepository:
                 "price_clp": _number(row.get("price_clp")),
                 "ensemble": row.get("ensemble", ""),
             })
+
+        forecasts: dict[str, ForecastDistribution] = {}
+        for raw in forecast_payload.get("forecasts", []):
+            try:
+                parsed = ForecastDistribution(**raw)
+                forecasts[parsed.asset] = parsed
+            except (TypeError, ValueError):
+                continue
+        decision_policy = DecisionPolicy()
+        decisions = [
+            decision_policy.evaluate(
+                signal["asset"],
+                signal["action"],
+                forecasts.get(signal["asset"]),
+                has_position=_number(shares.get(signal["asset"])) > 0,
+            ).to_dict()
+            | {
+                "signal_date": signal["date"],
+                "current_weight": signal["current_weight"],
+                "target_weight": signal["target_weight"],
+                "reference_price_usd": signal["price_usd"],
+            }
+            for signal in signals
+        ]
+
+        # Without executed lots, a reliable cost basis can only be reconstructed
+        # when the ledger contains exactly the initial rebalance.
+        first_event = rebalance_events[0] if len(rebalance_events) == 1 else {}
+        basis_prices = first_event.get("prices", {})
+        basis_fx = _number(basis_prices.get("CLP=X"))
+        targets = {signal["asset"]: signal["target_weight"] for signal in signals}
+        positions = []
+        for asset in ASSETS:
+            quantity = _number(shares.get(asset))
+            price = _number(ledger_last.get(f"{asset.lower()}_usd"))
+            value = quantity * price * usdclp
+            basis = quantity * _number(basis_prices.get(asset)) * basis_fx
+            unrealized = value - basis if basis > 0 else None
+            positions.append({
+                "asset": asset,
+                "shares": quantity,
+                "price_usd": price,
+                "market_value_clp": value,
+                "cost_basis_clp": basis if basis > 0 else None,
+                "cost_basis_method": "reconstructed_first_rebalance" if basis > 0 else "unavailable",
+                "unrealized_pnl_clp": unrealized,
+                "unrealized_pnl_pct": unrealized / basis if basis > 0 else None,
+                "current_weight": current_weights.get(asset),
+                "target_weight": targets.get(asset, 0.0),
+                "rebalance_value_clp": (
+                    (targets.get(asset, 0.0) - current_weights.get(asset, 0.0)) * portfolio_value
+                    if portfolio_value else None
+                ),
+                "allocation_action": next(
+                    (item["action"] for item in signals if item["asset"] == asset),
+                    "MANTENER",
+                ),
+            })
+        cash_clp = _number(forward_state.get("cash_clp"))
+        invested_clp = sum(item["market_value_clp"] for item in positions)
+        initial_capital = _number(forward_state.get("initial_capital_clp"), 10_000_000.0)
+        wallet = {
+            "mode": "paper",
+            "real_orders_enabled": False,
+            "value_clp": portfolio_value,
+            "cash_clp": cash_clp,
+            "invested_clp": invested_clp,
+            "cash_weight": cash_clp / portfolio_value if portfolio_value else None,
+            "return_since_start": _number(ledger_last.get("return_since_start")),
+            "pnl_since_start_clp": portfolio_value - initial_capital if portfolio_value else None,
+            "initial_capital_clp": initial_capital,
+            "cumulative_cost_clp": _number(forward_state.get("cumulative_cost_clp")),
+            "usdclp": usdclp,
+            "positions": positions,
+            "rebalance_history": [
+                {
+                    "recorded_at_utc": event.get("recorded_at_utc"),
+                    "signal_date": event.get("signal_date"),
+                    "value_before_clp": _number(event.get("portfolio_before_clp")),
+                    "value_after_cost_clp": _number(event.get("portfolio_after_cost_clp")),
+                    "cost_clp": _number(event.get("cost_clp")),
+                    "targets": event.get("targets", {}),
+                }
+                for event in reversed(rebalance_events[-10:])
+            ],
+        }
 
         metrics = []
         for row in metrics_raw:
@@ -363,6 +471,21 @@ class DashboardRepository:
                 "cumulative_cost_clp": _number(forward_state.get("cumulative_cost_clp")),
                 "signal_date": forward_state.get("last_signal_date") or (
                     signals[0]["date"] if signals else None
+                ),
+            },
+            "wallet": wallet,
+            "decisions": decisions,
+            "forecast_status": {
+                "available": bool(forecasts),
+                "promoted_assets": sorted(
+                    asset for asset, item in forecasts.items()
+                    if item.promoted and item.calibrated
+                ),
+                "artifact": str(paths["forecasts"]) if paths["forecasts"].exists() else None,
+                "message": (
+                    "Pronósticos probabilísticos disponibles; sólo los promovidos pueden emitir recomendación."
+                    if forecasts else
+                    "Aún no existe un forecast probabilístico calibrado OOS. La asignación v1.7 se muestra por separado."
                 ),
             },
             "signals": signals,

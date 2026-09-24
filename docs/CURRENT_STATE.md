@@ -57,6 +57,12 @@ Hasta disponer de snapshots/vintages verdaderamente point-in-time, el peso permi
 
 Además, toda promoción futura exige un block bootstrap circular emparejado de retornos netos contra v1.14: el límite inferior del intervalo 95% de la mejora anualizada debe ser positivo y la probabilidad bootstrap de mejora debe alcanzar 95%. La ausencia de muestra suficiente bloquea la promoción.
 
+## Decision Engine y wallet paper
+
+La terminal ahora trata la asignación de v1.7 y la recomendación direccional como salidas distintas. Los artefactos actuales permiten mostrar posiciones, efectivo, costos y objetivos paper, pero no contienen todavía una distribución predictiva calibrada OOS. Por eso QQQ, ECH y CPER aparecen como `SIN RECOMENDACIÓN / NO CALIBRADO`; su acción de asignación v1.7 sigue visible por separado. Esto es una abstención metodológica, no una recomendación neutral.
+
+La siguiente etapa es generar forecasts point-in-time para horizontes 1/5/20, registrar cada predicción antes de conocer el resultado, medir calibración y error por régimen y permitir una etiqueta `COMPRAR/VENDER` sólo después de superar el gate OOS. Las operaciones reales continúan deshabilitadas.
+
 ### Validación reproducida el 2026-09-23
 
 La cadena reanudable alcanzó v1.19 bajo Python 3.10. La reproducción con datos actuales obtuvo, en la ventana común de v1.14:

@@ -32,6 +32,60 @@
       <div class="ticker-skeleton">Cargando mercado online…</div>
     </section>
 
+    <nav class="app-nav" aria-label="Secciones del terminal">
+      <button class="nav-button active" data-view-target="decisions">DECISIONES</button>
+      <button class="nav-button" data-view-target="wallet">WALLET PAPER</button>
+      <button class="nav-button" data-view-target="research">RESEARCH</button>
+    </nav>
+
+    <div class="app-view active" id="decisionsView">
+      <section class="decision-hero">
+        <div>
+          <p class="eyebrow cyan">DECISION ENGINE · PAPER ONLY</p>
+          <h2>Qué hacer hoy, sin confundir señal con evidencia.</h2>
+          <p class="lede" id="forecastMessage">Comprobando pronósticos calibrados…</p>
+        </div>
+        <div class="forecast-gate blocked" id="forecastGate">
+          <span>GATE DE PRONÓSTICO</span><strong>COMPROBANDO</strong><small>Las órdenes reales están deshabilitadas.</small>
+        </div>
+      </section>
+      <section class="decision-summary">
+        <div><span>WALLET PAPER</span><strong id="decisionWalletValue">—</strong></div>
+        <div><span>RETORNO</span><strong id="decisionWalletReturn">—</strong></div>
+        <div><span>EFECTIVO</span><strong id="decisionWalletCash">—</strong></div>
+        <div><span>ÚLTIMA SEÑAL</span><strong id="decisionSignalDate">—</strong></div>
+      </section>
+      <section class="decision-grid" id="decisionGrid">
+        <article class="primary-decision empty-decision">Cargando decisiones auditables…</article>
+      </section>
+      <p class="decision-note">La recomendación estima dirección futura; la acción de cartera compara pesos actuales y objetivo. Son conceptos distintos.</p>
+    </div>
+
+    <div class="app-view" id="walletView">
+      <section class="wallet-heading">
+        <div><p class="eyebrow cyan">CUSTODIA SIMULADA</p><h2>Wallet paper</h2><p>Precios observados, posiciones simuladas y costos explícitos. Ninguna orden sale al mercado.</p></div>
+        <span class="paper-lock">● REAL TRADING OFF</span>
+      </section>
+      <section class="wallet-kpis">
+        <article><span>VALOR TOTAL</span><strong id="walletValue">—</strong></article>
+        <article><span>INVERTIDO</span><strong id="walletInvested">—</strong></article>
+        <article><span>EFECTIVO</span><strong id="walletCash">—</strong></article>
+        <article><span>P&amp;L DESDE INICIO</span><strong id="walletPnl">—</strong></article>
+        <article><span>COSTOS ACUMULADOS</span><strong id="walletCosts">—</strong></article>
+      </section>
+      <section class="panel wallet-panel">
+        <div class="panel-heading"><div><p class="eyebrow">POSICIONES</p><h3>Inventario y rebalanceo propuesto</h3></div><span class="status-chip neutral">CLP · PAPER</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Activo</th><th>Unidades</th><th>Precio</th><th>Valor</th><th>P&amp;L no realizado*</th><th>Actual → objetivo</th><th>Acción asignación</th></tr></thead><tbody id="walletPositions"></tbody></table></div>
+        <p class="microcopy">* Base de costo reconstruida desde el primer rebalanceo registrado; se identifica como estimación, no como dato de broker.</p>
+      </section>
+      <section class="wallet-lower">
+        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">DISTRIBUCIÓN</p><h3>Exposición actual</h3></div></div><div id="walletAllocation" class="wallet-allocation"></div></article>
+        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">LEDGER</p><h3>Rebalanceos recientes</h3></div></div><div id="walletHistory" class="wallet-history"></div></article>
+      </section>
+    </div>
+
+    <div class="app-view" id="researchView">
+
     <section class="command-deck">
       <div>
         <p class="eyebrow cyan">CONTROL DE MISIÓN</p>
@@ -227,6 +281,7 @@
         </dl>
       </article>
     </section>
+    </div>
   </main>
 
   <footer>
